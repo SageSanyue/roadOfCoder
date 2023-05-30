@@ -84,26 +84,61 @@ var output = {
 
 function byKind(array) {
     return array.reduce((acc, data) => {
-        // take the values of that item
+        console.log(acc, 'acc')
+        console.log(data, 'data')
+        console.log(Object.entries(data), 'Object.entries(data)')
+
         Object.entries(data).forEach(([key, value]) => {
-            // and map all the values to years
+            console.log('key', key)
+            console.log('value', value)
             acc[key] = acc[key] || []
-            acc[key].push(value)
+            if (typeof value === 'object') {
+                console.log('嵌套对象出现了')
+                flattenObj(value, key, acc)
+                console.log('acc101', acc)
+            } else {
+                console.log('数字出现了')
+                acc[key].push(value)
+            }
         })
         return acc
     }, {})
 }
 
-function deepFlatten(arr) {
-    flatten = (arr) => [].concat(...arr);
-    return flatten(arr.map((x) => (Array.isArray(x) ? deepFlatten(x) : x)));
+function flattenObj(obj, parentKey, acc) {
+    // let result = []
+    Object.entries(obj).forEach(([key, value]) => {
+        console.log('子函数key', key, '子函数value', value)
+        if(typeof value === 'object') {
+            console.log('对象套对象')
+            // result[key] = value
+            // console.log('中途result', result)
+            let newKey = `${parentKey}-${key}`
+            acc[newKey] = []
+            flattenObj(obj[key], newKey, acc)
+        } else {
+            console.log('正常情况')
+            // arr.push({key: value})
+            // return [key, value]
+            let newKey = `${parentKey}-${key}`;
+            acc[newKey] = acc[newKey] || []
+            console.log(125, acc)
+            acc[newKey].push(value)
+            console.log('acc126', acc)
+            // result.push(newKey, value)
+            // console.log(125, result)
+            // return result
+        }
+    })
 }
 
 function average(object) {
     const averages = {}
     for (let key in object) {
         console.log('key', key, 'object[key]', object[key])
-        averages[key] = object[key].reduce((sum, value) => sum + value) / object[key].length 
+        if(object[key].length > 0) {
+            averages[key] = (object[key].reduce((sum, value) => sum + value) / object[key].length ).toFixed(2)
+        }
     }
     return averages
 }
