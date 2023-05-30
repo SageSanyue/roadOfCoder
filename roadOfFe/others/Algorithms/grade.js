@@ -84,9 +84,6 @@ var output = {
 
 function byKind(array) {
     return array.reduce((acc, data) => {
-        console.log(acc, 'acc')
-        console.log(data, 'data')
-        console.log(Object.entries(data), 'Object.entries(data)')
 
         Object.entries(data).forEach(([key, value]) => {
             console.log('key', key)
@@ -96,7 +93,7 @@ function byKind(array) {
                 console.log('嵌套对象出现了')
                 flattenObj(value, key, acc)
                 console.log('acc101', acc)
-            } else {
+            } else if (key !== 'studentId') {
                 console.log('数字出现了')
                 acc[key].push(value)
             }
@@ -143,6 +140,59 @@ function average(object) {
     return averages
 }
 average(byKind(input))
+/**结果为
+var a = {
+    'age': "7.33",
+    'height': "3.00",
+    'scores-english': "85.00",
+    'scores-mathematics': "90.00",
+    'scores-pe-jump': "91.67",
+    'scores-pe-run': "80.00",
+    'scores-spanish': "85.33",
+    'weight': "5.00"
+}
+*/
+
+function restore(obj) {
+    var result = Object.assign(obj)
+    // 检测-分隔符
+    let nodeGrandchild = {}
+    Object.entries(result).forEach(([key, value]) => {
+        console.log('key', key, 'value', value)
+        
+        if (key.includes('-')) {
+            var array = key.split('-')
+            console.log('array', array)
+            let parentKey = array[0]
+            result[parentKey] =  result[parentKey] || {}
+            let index = array.length - 1;
+            console.log('index', index)
+            let nodeChild = result[parentKey]
+            console.log('nodeChild', nodeChild)
+            if (index === 1) {
+                console.log('if')
+                nodeChild[array[1]] = value
+            } else {
+                console.log('else')
+                
+                for (let i = index; i > 1; i--) {
+                    console.log('i', i)
+                    console.log('array[i]', array[i])
+                    nodeGrandchild[array[i]] = value
+                    console.log('nodeGrandchild', nodeGrandchild)    
+                    nodeChild[array[i-1]] = nodeGrandchild
+                    console.log('nodeChild', nodeChild) 
+                }
+            }
+            console.log('result[parentKey]', result[parentKey])
+            result[parentKey] = nodeChild
+            
+            console.log(result)
+            delete result[key]
+        }
+    })
+    return result
+}
 
 
 
