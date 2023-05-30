@@ -153,39 +153,69 @@ var a = {
 }
 */
 
+/**
+ * var b = {
+    'age': "7.33",
+    'height': "3.00",
+    'scores-english': "85.00",
+    'scores-mathematics': "90.00",
+    'scores-pe-jump': "91.67",
+    'scores-pe-run-point': "4.00",
+    'scores-pe-run-term': "1.33",
+    'scores-spanish': "85.33",
+    'weight': "5.00",
+}
+*/
+
 function restore(obj) {
-    var result = Object.assign(obj)
+    let result = Object.assign(obj)
     // 检测-分隔符
-    let nodeGrandchild = {}
+    let nodeGrandchild
+    let nodeChild
+    let parent
     Object.entries(result).forEach(([key, value]) => {
         console.log('key', key, 'value', value)
         
+        
         if (key.includes('-')) {
-            var array = key.split('-')
-            console.log('array', array)
-            let parentKey = array[0]
+            var keyArray = key.split('-')
+            console.log('keyArray', keyArray)
+            let parentKey = keyArray[0]
+            console.log('parentKey', parentKey)
             result[parentKey] =  result[parentKey] || {}
-            let index = array.length - 1;
+            console.log('169result', result)
+            console.log(' result[parentKey]',  result[parentKey])
+            parent = parent || result[parentKey]
+            let index = keyArray.length - 1; // 1 及以上数字
             console.log('index', index)
-            let nodeChild = result[parentKey]
+            
             console.log('nodeChild', nodeChild)
-            if (index === 1) {
+            if (index === 1) { // 表示为store-x 的两层结构
                 console.log('if')
-                nodeChild[array[1]] = value
+                // nodeChild[array[1]] = value
+                console.log('196parent', parent)
+                parent[keyArray[1]] = value
+                result[parentKey] = Object.assign(result[parentKey], parent)
             } else {
                 console.log('else')
-                
-                for (let i = index; i > 1; i--) {
-                    console.log('i', i)
-                    console.log('array[i]', array[i])
-                    nodeGrandchild[array[i]] = value
-                    console.log('nodeGrandchild', nodeGrandchild)    
-                    nodeChild[array[i-1]] = nodeGrandchild
-                    console.log('nodeChild', nodeChild) 
+                // result[parentKey] = Object.assign(result[parentKey], patchNode(index, value, keyArray, nodeGrandchild, nodeChild))
+                console.log('202-nodeGrandchild', nodeGrandchild)
+                if(nodeChild) {
+                    console.log('先跳了', nodeChild)
+                    let b = JSON.parse(JSON.stringify(nodeChild))
+                    console.log('b', b)
+                    nodeChild = Object.assign(nodeChild, patchNode(index, value, keyArray,b, nodeChild))
+                    
+                } else {
+                    console.log('后跑')
+                    nodeChild = patchNode(index, value, keyArray, nodeGrandchild, nodeChild)
                 }
+                result[parentKey] = Object.assign(result[parentKey], nodeChild)
+                console.log('200result[parentKey]', result[parentKey])
             }
-            console.log('result[parentKey]', result[parentKey])
-            result[parentKey] = nodeChild
+            
+            console.log('203result[parentKey]', result[parentKey])
+            
             
             console.log(result)
             delete result[key]
@@ -194,7 +224,104 @@ function restore(obj) {
     return result
 }
 
+function patchNode(index, value, array, nodeGrandchild = {}, nodeChild = {}) {
+        console.log('213index', index, value, array, nodeGrandchild, nodeChild)
+        console.log('array[index]', array[index])
+        nodeGrandchild[array[index]] = value
+        console.log('nodeGrandchild', nodeGrandchild)
+        console.log('array[index-1]', array[index-1])
+        // nodeChild = Object.assign(nodeChild, nodeGrandchild)
+        nodeChild[array[index-1]] = nodeGrandchild
+        index--
+        console.log('最外层index')
+        if(index > 2) {
+            console.log('进入递归')
+            patchNode(index, nodeGrandchild, array, nodeGrandchild, nodeChild)
+        } 
+        console.log('221nodeChild', nodeChild)
+        
+        return  nodeChild
+        // console.log('nodeChild', nodeChild) 
+}
 
+restore(average(byKind(input)))
+
+
+
+var testB = [
+    {
+        "studentId": 1,
+        "age": 7,
+        "height": 2,
+        "weight": 3,
+        "scores": {
+            "spanish": 80,
+            "mathematics": 90,
+            "english": 100,
+            "pe": {
+                "run": {
+                    "point": 4,
+                    "term": 1,
+                },
+                "jump": 95
+            }
+        }
+    },
+    {
+        "studentId": 2,
+        "age": 8,
+        "height": 4,
+        "weight": 6,
+        "scores": {
+            "spanish": 90,
+            "mathematics": 90,
+            "english": 80,
+            "pe": {
+                "run": {
+                    "point": 3,
+                    "term": 2,
+                },
+                "jump": 90
+            }
+        }
+    },
+    {
+        "studentId": 3,
+        "age": 7,
+        "height": 3,
+        "weight": 6,
+        "scores": {
+            "spanish": 86,
+            "mathematics": 90,
+            "english": 75,
+            "pe": {
+                "run": {
+                    "point": 5,
+                    "term": 1,
+                },
+                "jump": 90
+            }
+        }
+    }
+]
+
+var outputB = {
+    "age": 7.33,
+    "height": 3.0,
+    "weight": 5.0,
+    "scores": {
+        "spanish": 85.33,
+        "mathematics": 90.0,
+        "english": 85.0,
+        "pe": {
+            "run": {
+                "point": 4,
+                "term": 1.33
+            },
+            "jump": 91.67
+        }
+    }
+}
 
 
 
