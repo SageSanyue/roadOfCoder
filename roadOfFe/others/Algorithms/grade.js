@@ -4,8 +4,7 @@
    1. 属性名随意变化/增减不影响计算。
    2. 属性dict/object任意层级嵌套都可计算（不限于例子的3层）。
    3. 结果数据四舍五入，保留2位小数。
-
-输入：**/
+输入：
 var testListWithNestedDicts = [
     {
         "studentId": 1,
@@ -53,7 +52,6 @@ var testListWithNestedDicts = [
         }
     }
 ]
-
 // 输出：
 var output = {
     "age": 7.33,
@@ -69,32 +67,17 @@ var output = {
         }
     }
 }
+答案运行在线参见 https://codepen.io/SageXXX/pen/ExdBPNL?editors=1010
+*/
 
-// function deepClone(obj = {}) {
-//     if (typeof obj !== 'object' || obj == null) { return obj } // obj为null或非对象非数组，直接返回
-//     let result = {}
-//     for (let key in obj) {
-//         if (obj.hasOwnProperty(key)) {
-//             result[key] = deepClone(obj[key])
-//         }
-//     }
-// }
-
-
-
-function byKind(array) {
+function sum(array) {
     return array.reduce((acc, data) => {
 
         Object.entries(data).forEach(([key, value]) => {
-            console.log('key', key)
-            console.log('value', value)
             acc[key] = acc[key] || []
             if (typeof value === 'object') {
-                console.log('嵌套对象出现了')
                 flattenObj(value, key, acc)
-                console.log('acc101', acc)
             } else if (key !== 'studentId') {
-                console.log('数字出现了')
                 acc[key].push(value)
             }
         })
@@ -103,28 +86,15 @@ function byKind(array) {
 }
 
 function flattenObj(obj, parentKey, acc) {
-    // let result = []
     Object.entries(obj).forEach(([key, value]) => {
-        console.log('子函数key', key, '子函数value', value)
         if(typeof value === 'object') {
-            console.log('对象套对象')
-            // result[key] = value
-            // console.log('中途result', result)
             let newKey = `${parentKey}-${key}`
             acc[newKey] = []
             flattenObj(obj[key], newKey, acc)
         } else {
-            console.log('正常情况')
-            // arr.push({key: value})
-            // return [key, value]
             let newKey = `${parentKey}-${key}`;
             acc[newKey] = acc[newKey] || []
-            console.log(125, acc)
             acc[newKey].push(value)
-            console.log('acc126', acc)
-            // result.push(newKey, value)
-            // console.log(125, result)
-            // return result
         }
     })
 }
@@ -132,14 +102,42 @@ function flattenObj(obj, parentKey, acc) {
 function average(object) {
     const averages = {}
     for (let key in object) {
-        console.log('key', key, 'object[key]', object[key])
         if(object[key].length > 0) {
             averages[key] = (object[key].reduce((sum, value) => sum + value) / object[key].length ).toFixed(2)
         }
     }
     return averages
 }
-average(byKind(input))
+
+function restoreObj(obj) {
+    let temp = Object.assign(obj)
+    let node = {}
+    Object.entries(temp).forEach(([key, value]) => {
+        if (key.includes('-')) {
+            var keyArray = key.split('-')
+            let putInto = node;
+
+            for (let i = 0; i < keyArray.length; i++) {
+                let name = keyArray[i];
+                let childValue = (i === keyArray.length - 1) ? value : {};
+                putInto[name] = putInto[name] || childValue;
+                putInto = putInto[name];
+            }
+            delete temp[key]
+        }
+    })
+    let result = Object.assign(temp, node)
+    return result
+}
+
+function answer(input) {
+    return restoreObj(average(sum(input)))
+}
+
+var result = answer(testListWithNestedDicts)
+console.log(result)
+
+
 /**结果为
 var a = {
     'age': "7.33",
@@ -153,68 +151,8 @@ var a = {
 }
 */
 
-/**
- * var b = {
-    'age': "7.33",
-    'height': "3.00",
-    'scores-english': "85.00",
-    'scores-mathematics': "90.00",
-    'scores-pe-jump': "91.67",
-    'scores-pe-run-point': "4.00",
-    'scores-pe-run-term': "1.33",
-    'scores-spanish': "85.33",
-    'weight': "5.00",
-}
-*/
-
-    // var options = 'a.b.c.d',
-    //   parts = options.split('.'),
-    //   obj = { a: { foo: 42 } },
-    //   temp = obj,
-    // addNestedProp = function(obj, prop) {
-    //     return obj[prop] = obj[prop] || {}; // assign and return the new object,
-    // };                                      // but keep object if exists
-
-    // parts.forEach(function(part) {
-    //     temp = addNestedProp(temp, part);
-    // });
-
-function restoreObj(obj) {
-    let result = Object.assign(obj)
-    let t = {}
-    Object.entries(result).forEach(([key, value]) => {
-        if (key.includes('-')) {
-            var keyArray = key.split('-')
-            let putInto = t;
-
-            for (let i = 0; i < keyArray.length; i++) {
-                let name = keyArray[i];
-                let v = (i === keyArray.length - 1) ? value : {};
-                putInto[name] = putInto[name] || v;
-                putInto = putInto[name];
-            }
-            console.log('putInto', putInto)
-            delete result[key]
-            console.log('result', result)
-            console.log('obj', obj)
-        }
-    })
-    // console.log('acc', acc)
-    let q
-    q = Object.assign(result, t)
-    return q
-}
-//  function addNestedProp (obj, prop) {
-//     return obj[prop] = obj[prop] || {}; // assign and return the new object,
-// };      
-
-
-
-restoreObj(average(byKind(input)))
-
-
-
-var testB = [
+/**测试数据1
+ * var testB = [
     {
         "studentId": 1,
         "age": 7,
@@ -288,7 +226,23 @@ var outputB = {
         }
     }
 }
+ */
 
+/**
+ * var b = {
+    'age': "7.33",
+    'height': "3.00",
+    'scores-english': "85.00",
+    'scores-mathematics': "90.00",
+    'scores-pe-jump': "91.67",
+    'scores-pe-run-point': "4.00",
+    'scores-pe-run-term': "1.33",
+    'scores-spanish': "85.33",
+    'weight': "5.00",
+}
+*/
+
+/**测试数据2
 var testC = [
     {
         "studentId": 1,
@@ -406,8 +360,10 @@ var outputC = {
         }
     }
 }
+*/
+
 /**
- * var b = {
+ * var c = {
     'age': "7.33",
     'height': "3.00",
     'scores-english': "85.00",
@@ -422,6 +378,181 @@ var outputC = {
     'scores-spanish-origin': "76.67",
     'scores-spanish-present': "70.00",
     'weight': "5.00"
+}
+*/
+
+/**测试数据3
+var testC = [
+    {
+        "studentId": 1,
+        "age": 7,
+        "assets": {
+            "gold": 9,
+            "house": 6,
+            "money": {
+                "savings": 3000,
+                "stock": 500
+            },
+        },
+        "height": 2,
+        "weight": 3,
+        "scores": {
+            "mathematics": 90,
+            "spanish": {
+                "origin": 60,
+                "present": 80,
+                "curture": {
+                    "aclass": 60,
+                    "bclass": {
+                        "senior": 70,
+                        "junior": 60,
+                        "intermediate": 80
+                    }
+                }
+            },
+            "english": 100,
+            "pe": {
+                "run": {
+                    "point": 4,
+                    "term": 1,
+                },
+                "jump": 95
+            }
+        }
+    },
+    {
+        "studentId": 2,
+        "age": 8,
+        "assets": {
+            "gold": 7,
+            "house": 7,
+            "money": {
+                "savings": 2000,
+                "stock": 600
+            },
+        },
+        "height": 4,
+        "weight": 6,
+        "scores": {
+            "mathematics": 90,
+            "spanish": {
+                "origin": 90,
+                "present": 70,
+                "curture": {
+                    "aclass": 60,
+                    "bclass": {
+                        "senior": 90,
+                        "junior": 90,
+                        "intermediate": 70
+                    }
+                }
+            },
+            "english": 80,
+            "pe": {
+                "run": {
+                    "point": 3,
+                    "term": 2,
+                },
+                "jump": 90
+            }
+        }
+    },
+    {
+        "studentId": 3,
+        "age": 7,
+        "assets": {
+            "gold": 8,
+            "house": 5,
+            "money": {
+                "savings": 1000,
+                "stock": 700
+            },
+        },
+        "height": 3,
+        "weight": 6,
+        "scores": {
+            "mathematics": 90,
+            "spanish": {
+                "origin": 80,
+                "present": 60,
+                "curture": {
+                    "aclass": 50,
+                    "bclass": {
+                        "senior": 40,
+                        "junior": 60,
+                        "intermediate": 50
+                    }
+                }
+            },
+            "english": 75,
+            "pe": {
+                "run": {
+                    "point": 5,
+                    "term": 1,
+                },
+                "jump": 90
+            }
+        }
+    }
+]
+var outputC = {
+    "age": 7.33,
+    "assets": {
+        "gold": 8,
+        "house": 6,
+        "money": {
+            "savings": 2000,
+            "stock": 600
+        },
+    },
+    "height": 3.0,
+    "weight": 5.0,
+    "scores": {
+        "mathematics": 90.0,
+        "spanish": {
+            "origin": 76.67,
+            "present": 70,
+            "curture": {
+                "aclass": 56.67,
+                "bclass": {
+                    "senior": 66.67,
+                    "junior": 70,
+                    "intermediate": 66.67
+                }
+            }
+        },
+        "english": 85.0,
+        "pe": {
+            "run": {
+                "point": 4,
+                "term": 1.33
+            },
+            "jump": 91.67
+        }
+    }
+}
+*/
+
+/**
+ * var c = {
+    'age': "7.33",
+    'height': "3.00",
+    'scores-english': "85.00",
+    'scores-mathematics': "90.00",
+    'scores-pe-jump': "91.67",
+    'scores-pe-run-point': "4.00",
+    'scores-pe-run-term': "1.33",
+    'scores-spanish-curture-aclass': "56.67",
+    'scores-spanish-curture-bclass-intermediate': "66.67",
+    'scores-spanish-curture-bclass-junior': "70.00",
+    'scores-spanish-curture-bclass-senior': "66.67",
+    'scores-spanish-origin': "76.67",
+    'scores-spanish-present': "70.00",
+    'weight': "5.00",
+    'assets-house': 6,
+    'assets-money-stock': 600,
+    'assets-money-savings': 2000,
+    'assets-gold': 9,
 }
 */
 
