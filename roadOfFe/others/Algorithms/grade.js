@@ -194,104 +194,23 @@ function restoreObj(obj) {
                 putInto = putInto[name];
             }
             console.log('putInto', putInto)
+            delete result[key]
+            console.log('result', result)
+            console.log('obj', obj)
         }
     })
     // console.log('acc', acc)
-    return t;
+    let q
+    q = Object.assign(result, t)
+    return q
 }
 //  function addNestedProp (obj, prop) {
 //     return obj[prop] = obj[prop] || {}; // assign and return the new object,
 // };      
 
-function restore(obj) {
-    let result = Object.assign(obj)
-    // 检测-分隔符
-    let nodeGrandchild
-    let nodeChild
-    let parent
-    Object.entries(result).forEach(([key, value]) => {
-        console.log('key', key, 'value', value)
-        
-        
-        if (key.includes('-')) {
-            var keyArray = key.split('-')
-            console.log('keyArray', keyArray)
-            let parentKey = keyArray[0]
-            console.log('parentKey', parentKey)
-            result[parentKey] =  result[parentKey] || {}
-            console.log('169result', result)
-            console.log(' result[parentKey]',  result[parentKey])
-            parent = parent || result[parentKey]
-            let index = keyArray.length - 1; // 1 及以上数字
-            console.log('index', index)
-            
-            console.log('nodeChild', nodeChild)
-            if (index === 1) { // 表示为store-x 的两层结构
-                console.log('if')
-                // nodeChild[array[1]] = value
-                console.log('196parent', parent)
-                parent[keyArray[1]] = value
-                result[parentKey] = Object.assign(result[parentKey], parent)
-            } else {
-                console.log('else')
-                // result[parentKey] = Object.assign(result[parentKey], patchNode(index, value, keyArray, nodeGrandchild, nodeChild))
-                console.log('202-nodeGrandchild', nodeGrandchild)
-                if(nodeChild) {
-                    console.log('先跳了', nodeChild)
-                    
-                    let b = JSON.parse(JSON.stringify(nodeChild))
-                    console.log('b', b)
-                    nodeChild = Object.assign(nodeChild, patchNode(index, value, keyArray,nodeGrandchild, b))
-                    
-                } else {
-                    console.log('后跑')
-                    nodeChild = patchNode(index, value, keyArray, nodeGrandchild, nodeChild)
-                    console.log('212-nodeChild', JSON.parse(JSON.stringify(nodeChild)))
-                }
-                result[parentKey] = Object.assign(result[parentKey], nodeChild)
-                console.log('200result[parentKey]', JSON.parse(JSON.stringify(nodeChild)))
-            }
-            
-            console.log('203result[parentKey]', result[parentKey])
-            
-            
-            console.log(result)
-            delete result[key]
-        }
-    })
-    return result
-}
 
-function patchNode(index, value, array, nodeGrandchild = {}, nodeChild = {}) {
-        console.log('213index', index, value, array, JSON.parse(JSON.stringify(nodeGrandchild)), JSON.parse(JSON.stringify(nodeChild)))
-        console.log('array[index]', array[index])
-        
-        let c = Object.assign(nodeGrandchild, nodeChild)
-        let d = JSON.parse(JSON.stringify(nodeChild))
-        console.log('c', JSON.parse(JSON.stringify(c)))
-        nodeGrandchild[array[index]] = value   
-        nodeChild[array[index-1]] = nodeGrandchild
-        
-        console.log('c', c)
-        console.log('nodeGrandchild', nodeGrandchild)
-        console.log('array[index-1]', array[index-1])
-        // nodeChild = Object.assign(nodeChild, nodeGrandchild)
-        
-        
-        index--
-        console.log('最外层index')
-        if(index > 2) {
-            console.log('进入递归')
-            patchNode(index, nodeGrandchild, array, nodeGrandchild, nodeChild)
-        } 
-        console.log('221nodeChild', nodeChild)
-        console.log('d', JSON.parse(JSON.stringify(d)))
-        
-        return  nodeChild
-        // console.log('nodeChild', nodeChild) 
-}
 
-restore(average(byKind(input)))
+restoreObj(average(byKind(input)))
 
 
 
@@ -369,6 +288,142 @@ var outputB = {
         }
     }
 }
+
+var testC = [
+    {
+        "studentId": 1,
+        "age": 7,
+        "height": 2,
+        "weight": 3,
+        "scores": {
+            "mathematics": 90,
+            "spanish": {
+                "origin": 60,
+                "present": 80,
+                "curture": {
+                    "aclass": 60,
+                    "bclass": {
+                        "senior": 70,
+                        "junior": 60,
+                        "intermediate": 80
+                    }
+                }
+            },
+            "english": 100,
+            "pe": {
+                "run": {
+                    "point": 4,
+                    "term": 1,
+                },
+                "jump": 95
+            }
+        }
+    },
+    {
+        "studentId": 2,
+        "age": 8,
+        "height": 4,
+        "weight": 6,
+        "scores": {
+            "mathematics": 90,
+            "spanish": {
+                "origin": 90,
+                "present": 70,
+                "curture": {
+                    "aclass": 60,
+                    "bclass": {
+                        "senior": 90,
+                        "junior": 90,
+                        "intermediate": 70
+                    }
+                }
+            },
+            "english": 80,
+            "pe": {
+                "run": {
+                    "point": 3,
+                    "term": 2,
+                },
+                "jump": 90
+            }
+        }
+    },
+    {
+        "studentId": 3,
+        "age": 7,
+        "height": 3,
+        "weight": 6,
+        "scores": {
+            "mathematics": 90,
+            "spanish": {
+                "origin": 80,
+                "present": 60,
+                "curture": {
+                    "aclass": 50,
+                    "bclass": {
+                        "senior": 40,
+                        "junior": 60,
+                        "intermediate": 50
+                    }
+                }
+            },
+            "english": 75,
+            "pe": {
+                "run": {
+                    "point": 5,
+                    "term": 1,
+                },
+                "jump": 90
+            }
+        }
+    }
+]
+var outputC = {
+    "age": 7.33,
+    "height": 3.0,
+    "weight": 5.0,
+    "scores": {
+        "mathematics": 90.0,
+        "spanish": {
+            "origin": 76.67,
+            "present": 70,
+            "curture": {
+                "aclass": 56.67,
+                "bclass": {
+                    "senior": 66.67,
+                    "junior": 70,
+                    "intermediate": 66.67
+                }
+            }
+        },
+        "english": 85.0,
+        "pe": {
+            "run": {
+                "point": 4,
+                "term": 1.33
+            },
+            "jump": 91.67
+        }
+    }
+}
+/**
+ * var b = {
+    'age': "7.33",
+    'height': "3.00",
+    'scores-english': "85.00",
+    'scores-mathematics': "90.00",
+    'scores-pe-jump': "91.67",
+    'scores-pe-run-point': "4.00",
+    'scores-pe-run-term': "1.33",
+    'scores-spanish-curture-aclass': "56.67",
+    'scores-spanish-curture-bclass-intermediate': "66.67",
+    'scores-spanish-curture-bclass-junior': "70.00",
+    'scores-spanish-curture-bclass-senior': "66.67",
+    'scores-spanish-origin': "76.67",
+    'scores-spanish-present': "70.00",
+    'weight': "5.00"
+}
+*/
 
 
 
