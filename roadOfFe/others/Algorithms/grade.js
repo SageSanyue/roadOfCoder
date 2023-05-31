@@ -167,6 +167,42 @@ var a = {
 }
 */
 
+    // var options = 'a.b.c.d',
+    //   parts = options.split('.'),
+    //   obj = { a: { foo: 42 } },
+    //   temp = obj,
+    // addNestedProp = function(obj, prop) {
+    //     return obj[prop] = obj[prop] || {}; // assign and return the new object,
+    // };                                      // but keep object if exists
+
+    // parts.forEach(function(part) {
+    //     temp = addNestedProp(temp, part);
+    // });
+
+function restoreObj(obj) {
+    let result = Object.assign(obj)
+    let t = {}
+    Object.entries(result).forEach(([key, value]) => {
+        if (key.includes('-')) {
+            var keyArray = key.split('-')
+            let putInto = t;
+
+            for (let i = 0; i < keyArray.length; i++) {
+                let name = keyArray[i];
+                let v = (i === keyArray.length - 1) ? value : {};
+                putInto[name] = putInto[name] || v;
+                putInto = putInto[name];
+            }
+            console.log('putInto', putInto)
+        }
+    })
+    // console.log('acc', acc)
+    return t;
+}
+//  function addNestedProp (obj, prop) {
+//     return obj[prop] = obj[prop] || {}; // assign and return the new object,
+// };      
+
 function restore(obj) {
     let result = Object.assign(obj)
     // 检测-分隔符
@@ -202,16 +238,18 @@ function restore(obj) {
                 console.log('202-nodeGrandchild', nodeGrandchild)
                 if(nodeChild) {
                     console.log('先跳了', nodeChild)
+                    
                     let b = JSON.parse(JSON.stringify(nodeChild))
                     console.log('b', b)
-                    nodeChild = Object.assign(nodeChild, patchNode(index, value, keyArray,b, nodeChild))
+                    nodeChild = Object.assign(nodeChild, patchNode(index, value, keyArray,nodeGrandchild, b))
                     
                 } else {
                     console.log('后跑')
                     nodeChild = patchNode(index, value, keyArray, nodeGrandchild, nodeChild)
+                    console.log('212-nodeChild', JSON.parse(JSON.stringify(nodeChild)))
                 }
                 result[parentKey] = Object.assign(result[parentKey], nodeChild)
-                console.log('200result[parentKey]', result[parentKey])
+                console.log('200result[parentKey]', JSON.parse(JSON.stringify(nodeChild)))
             }
             
             console.log('203result[parentKey]', result[parentKey])
@@ -225,13 +263,21 @@ function restore(obj) {
 }
 
 function patchNode(index, value, array, nodeGrandchild = {}, nodeChild = {}) {
-        console.log('213index', index, value, array, nodeGrandchild, nodeChild)
+        console.log('213index', index, value, array, JSON.parse(JSON.stringify(nodeGrandchild)), JSON.parse(JSON.stringify(nodeChild)))
         console.log('array[index]', array[index])
-        nodeGrandchild[array[index]] = value
+        
+        let c = Object.assign(nodeGrandchild, nodeChild)
+        let d = JSON.parse(JSON.stringify(nodeChild))
+        console.log('c', JSON.parse(JSON.stringify(c)))
+        nodeGrandchild[array[index]] = value   
+        nodeChild[array[index-1]] = nodeGrandchild
+        
+        console.log('c', c)
         console.log('nodeGrandchild', nodeGrandchild)
         console.log('array[index-1]', array[index-1])
         // nodeChild = Object.assign(nodeChild, nodeGrandchild)
-        nodeChild[array[index-1]] = nodeGrandchild
+        
+        
         index--
         console.log('最外层index')
         if(index > 2) {
@@ -239,6 +285,7 @@ function patchNode(index, value, array, nodeGrandchild = {}, nodeChild = {}) {
             patchNode(index, nodeGrandchild, array, nodeGrandchild, nodeChild)
         } 
         console.log('221nodeChild', nodeChild)
+        console.log('d', JSON.parse(JSON.stringify(d)))
         
         return  nodeChild
         // console.log('nodeChild', nodeChild) 
