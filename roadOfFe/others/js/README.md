@@ -12,6 +12,10 @@
 
 ### 深拷贝  
 ```
+/**
+ * 深拷贝
+ * @param {Object} obj 源对象
+ */
 function deepClone(obj = {}) {
     if(typeof obj !== 'object' || obj == null) { // 当obj为null或者不为对象或数组时
         return obj
