@@ -7,4 +7,4 @@
 #### 防御  
 抵御CSRF攻击关键在于：在请求中放入攻击者所不能伪造的信息，且该信息不存在于cookie中。  
 开发者可在HTTP请求中以参数形式加入一个随机产生的token，并在服务器端建立一个拦截器来验证这个token。若请求中请求中没有token或token内容不正确，则认为可能是CSRF攻击而拒绝。  
-token可以在用户登录后产生并放于session中，然后在每次请求把token从session中拿出，与请求中的token进行对比。
+token可以在用户登录后于服务端产生并放于session中，然后在每次请求把token从session中拿出，与请求中的token进行对比。
