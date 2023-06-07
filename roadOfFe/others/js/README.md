@@ -78,3 +78,11 @@ console.log(b)
 console.log(a)
 ```
 
+  
+### Promise  
+#### Promise使用  
+
+#### 手写Promise  
+```
+
+```
