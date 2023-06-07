@@ -1,5 +1,23 @@
 # 网络相关知识点  
 
+## 网络连接  
+### 从输入url到看到页面发生了什么？
+
+## ajax  
+### 手写ajax  
+```
+const xhr = new XMLHttpRequest()
+xhr.open('GET', '/api', false)
+xhr.onreadystatechange = function () {
+    if(xhr.readyState == 4) {
+        if(xhr.state === 200) {
+            console.log(xhr.responseText)
+        }
+    }
+}
+xhr.send()
+```
+
 ## 网络安全  
 
 ### CSRF攻击  
