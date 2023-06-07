@@ -7,7 +7,7 @@
 ### 手写ajax  
 ```
 const xhr = new XMLHttpRequest()
-xhr.open('GET', '/api', false)
+xhr.open('GET', '/api', true) // true为异步
 xhr.onreadystatechange = function () {
     if(xhr.readyState == 4) {
         if(xhr.state === 200) {
@@ -19,6 +19,11 @@ xhr.send()
 ```
 
 ## 网络安全  
+
+### 浏览器的同源策略  
+
+### 跨域  
+
 
 ### CSRF攻击  
 #### 定义  
