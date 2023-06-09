@@ -11,3 +11,10 @@
 
 
 ### Class语法  
+
+### Promise  
+#### Promise.allSettled()  
+#### Promise.all()
+#### Promise.race()  
+
+### async/await
