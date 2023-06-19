@@ -6,6 +6,8 @@
 阮一峰老师的[react教程](https://www.ruanyifeng.com/blog/2015/03/react.html)及其[配套代码](https://github.com/ruanyf/react-demos)  
   
 ### 细节知识点  
+#### 父子组件通讯  
+
 
 ### React生命周期  
 
