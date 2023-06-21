@@ -83,8 +83,50 @@ console.log(b)
 b.hobby.x.y = [1,2,3]
 console.log(b)
 console.log(a)
-```
+```  
 
+### 深度比较  
+如lodash的[isEqual](https://www.lodashjs.com/docs/lodash.isEqual)  
+例子：  
+```
+var object = { 'a': 1 };
+var other = { 'a': 1 };
+ 
+_.isEqual(object, other); // => true
+ 
+object === other; // => false
+```
+手写深度比较：  
+```
+// 判断是否是对象或数组
+function isObject(obj) {
+    return typeof obj === 'Object' && obj !== null
+}
+
+// 全相等(深度)
+function isEqual(obj1, obj2) {
+    if(!isObject(obj1) || isObject(obj2)) {
+        return obj1 === obj2 // 值类型（注意参与比较的一般不会是函数）
+    }
+    if(obj1 === obj1){
+        return true // 兼容(obj1, obj1)
+    }
+    // 两个都是对象或者数组，而且不相等  
+    const obj1Keys = Object.keys(obj1) // 1.先取出obj1和obj2的keys，比较个数
+    const obj2Keys = Object.keys(obj2) 
+    if(obj1Keys.length !== obj2Keys.length) {
+        return false
+    }
+    // 2.以obj1为基准，和obj2依次递归比较
+    for(let key in obj1) {
+        // 比较当前key的val-递归
+        const res = isEqual(obj1[key], obj2[key])
+        if(!res) { return false}
+    }
+    // 3.全相等
+    return true
+}
+```
   
 ### Promise  
 #### Promise使用  
