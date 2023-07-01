@@ -1,18 +1,71 @@
 # TypeScript  
 
 ## 基础  
+在TypeScript中声明变量，需要加上类型声明，如boolean或string等。通过静态类型约束，在编译时执行类型检查，这样可以避免一些类型混用的低级错误。  
 
-### 基本类型  
-#### 布尔类型  
-#### 数字类型  
-#### 字符串类型
-#### 数组类型  
-#### 元组类型  
-#### 枚举类型  
-#### 任意值类型  
+### 基本类型(带-为ts特有) 
+#### 布尔类型boolean  
+布尔类型是最简单的数据类型，只有true和false两种值。  
+下面定义了一个布尔类型的变量flag，并赋值为true。由于flag被初始化为布尔类型，如果再赋值为非boolean的其他类型值，编译时会抛出错误。  
+```
+let flag: boolean = true;
+flag = 1; // 报错，不能把数字类型的值赋值给布尔类型的变量
+```  
+
+#### 数字类型number  
+在TypeScript中，数字都是浮点型。TypeScript同时支持二进制、八进制、十进制和十六进制字面量。  
+```
+let binaryLiteral: number = 0b1010; // 二进制
+let octalLiteral: number = 0o744; // 八进制
+let decLiteral: number = 6; // 十进制
+let hexLiteral: number = 0xf00d; // 十六进制
+```
+
+#### 字符串类型string  
+TypeScript支持使用单引号(')或双引号(")来表示字符串类型。除此之外，还支持使用模版字符串反引号(`)来定义多行文本和内嵌表达式。使用 ${ expr } 的形式嵌入变量或表达式，在处理拼接字符串时很有用。  
+```
+let name: string = "Angular";
+let years: number = 5;
+let words: string = `你好，今年是 ${ name } 发布 ${ years + 1 } 周年 `;
+```  
+
+#### 数组类型array  
+TypeScript数组的操作类似于JavaScript数组的操作，TypeScript建议开发者最好只为数组元素赋一种类型的值。TypeScript有两种数组定义方式。  
+```
+// 定义方式1：在元素后面接上[]
+let arr: number[] = [1,2];  
+// 定义方式2：使用数组泛型
+let arr: Array<number> = [1,2]
+```  
+
+#### 元组类型-tuple  
+元组类型用来表示已知元素数量和类型的数组，各元素的类型不必相同。  
+下面定义了一个值分别为字符串和数字类型的元组：
+```
+let x: [string, number];
+x = ['Angular', 25]; // 运行正常
+x = [10, 'Angular']; // 报错
+console.log(x[0]); // 输出 Angular
+```
+
+#### 枚举类型-enum  
+枚举是一个可被命名的整型常数的集合，枚举类型为集合成员赋予有意义的名称，增强了可读性。  
+```
+enum Color {Red, Green, Blue};
+let c: Color = Color.Blue;
+console.log(c); // 输出 2
+```  
+枚举默认的下标是0，可以手动修改默认的下标值。例如：  
+```
+enum Color {Red = 2, Blue, Green = 6};
+let c: Color = Color.Blue;
+console.log(c); // 输出 3 
+```  
+
+#### 任意值类型-any  
 #### null和undefined  
-#### void类型  
-#### never类型  
+#### void类型-  
+#### never类型-  
 
 ### 声明和结构  
 #### let声明  
