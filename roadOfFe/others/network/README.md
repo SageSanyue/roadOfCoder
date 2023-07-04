@@ -73,16 +73,18 @@ DNS解析：域名->IP地址
 ## ajax  
 ### 手写ajax  
 ```
-const xhr = new XMLHttpRequest()
-xhr.open('GET', '/api', true) // true为异步
-xhr.onreadystatechange = function () {
-    if(xhr.readyState === 4) {
-        if(xhr.state === 200) {
-            console.log(xhr.responseText)
+let request = new XMLHttpRequest();
+request.open('get', '/xxx'); // 配置request
+request.send();
+request.onreadystatechange = () => {
+    if(request.readyState === 4) {
+        if(request.status >= 200 && request.status < 300) {
+            console.log('请求成功')
+        } else {
+            console.log('请求失败')
         }
     }
 }
-xhr.send()
 ```
 
 ## 网络安全  
