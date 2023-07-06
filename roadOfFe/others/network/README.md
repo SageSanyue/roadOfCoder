@@ -4,12 +4,21 @@
     - [常见状态码](#常见状态码)
     - [Restful-API](#restful-api)
     - [http缓存](#http缓存)
+      - [浏览器缓存](#浏览器缓存)
+      - [http强制缓存](#http强制缓存)
+        - [强制缓存](#强制缓存)
+        - [Expires](#expires)
+        - [cache-control](#cache-control)
+      - [http协商缓存](#http协商缓存)
+        - [协商缓存](#协商缓存)
+        - [Last-Modified](#last-modified)
+        - [Etag](#etag)
+      - [实际场景](#实际场景)
+        - [频繁变动的资源](#频繁变动的资源)
+        - [不常变动的资源](#不常变动的资源)
       - [浏览器的缓存存放在哪里？](#浏览器的缓存存放在哪里)
         - [内存缓存(from memory cache)](#内存缓存from-memory-cache)
         - [硬盘缓存(from disk cache)](#硬盘缓存from-disk-cache)
-      - [cache-control 与 http强制缓存](#cache-control-与-http强制缓存)
-        - [强制缓存](#强制缓存)
-      - [Etag和Last-Modified http协商缓存](#etag和last-modified-http协商缓存)
     - [HTTPS](#https)
   - [网络连接](#网络连接)
     - [页面加载形式](#页面加载形式)
@@ -74,9 +83,97 @@ delete请求：
 
 ### http缓存  
 描述一下http的缓存机制   
-![cache](./cache.png)
+![cache](./img/cache.png)  
+
+#### 浏览器缓存  
+浏览器在加载资源时，根据请求头的expires和cache-control判断是否命中强缓存，是则直接从缓存读取资源，不会发请求到服务器。  
+如果没有命中强缓存，浏览器一定会发送一个请求到服务器，通过last-modified和etag验证资源是否命中协商缓存，如果命中，服务器会将这个请求返回，但是不会返回这个资源的数据，依然是从缓存中读取资源。  
+如果前面两者都没有命中，直接从服务器加载资源。  
+异： 强缓存不发请求到服务器，协商缓存会发请求到服务器。  
+同： 如果命中，都是从客户端缓存中加载资源，而不是从服务器加载资源数据。  
+
+浏览器缓存过程
+1.浏览器第一次加载资源，服务器返回200，浏览器将资源文件从服务器上请求下载下来，并把response header及该请求的返回时间一并缓存；  
+2.下一次加载资源时，先比较当前时间和上一次返回200时的时间差，如果没有超过cache-control设置的max-age，则没有过期，命中强缓存，不发请求直接从本地缓存读取该文件（如果浏览器不支持HTTP1.1，则用expires判断是否过期）；如果时间过期，则向服务器发送header带有If-None-Match和If-Modified-Since的请求；  
+3.服务器收到请求后，优先根据Etag的值判断被请求的文件有没有做修改，Etag值一致则没有修改，命中协商缓存，返回304；如果不一致则有改动，直接返回新的资源文件带上新的Etag值并返回200；  
+4.如果服务器收到的请求没有Etag值，则将If-Modified-Since和被请求文件的最后修改时间做比对，一致则命中协商缓存，返回304；不一致则返回新的last-modified和文件并返回200。  
+
+浏览器缓存主要有以下几个优点：  
+减少重复数据请求，避免通过网络再次加载资源，节省流量。  
+降低服务器的压力，提升网站性能。  
+加快客户端加载网页的速度， 提升用户体验。
+
+
+
+#### http强制缓存  
+强制缓存： 强制缓存是指在缓存期内，浏览器直接从缓存中获取资源，而不会向服务器发送请求。  
+协商缓存： 协商缓存是指在缓存期内，浏览器向服务器发送请求，通过比较资源的最后修改时间或唯一标识符等信息，判断是否需要更新缓存。  
+
+##### 强制缓存  
+向浏览器缓存查找该请求结果，并根据该结果的缓存规则来决定是否使用该缓存结果的过程。
+![mandatoryCache1](./img/mandatory1.png)  
+![mandatoryCache2](./img/mandatory2.png)  
+缓存规则：设置响应头  
+Expires字段  
+Cache-Control字段(优先级高)  
+
+##### Expires  
+Expires是HTTP/1.0控制网页缓存的字段，其值为服务器返回该请求结果缓存的到期时间，即再次发起该请求时，如果客户端的时间小于Expires的值时，直接使用缓存结果。   
+```
+Expires: Wed, 11 May 2018 07:20:00 GMT
+```  
+ 
+##### cache-control  
+到了HTTP/1.1，Expires已经被Cache-Control替代，原因在于Expires控制缓存的原理是使用客户端的时间和服务端返回的时间做对比，那么如果客户端与服务端的时间因为某些原因（例如时区）发送误差，那么强制缓存则会直接失效。  
+在HTTP/1.1中，Cache-Control是最重要的规则，主要用于控制网页缓存，主要取值为：
+```
+public：所有内容都将被缓存（客户端/代理服务器/CDN等）
+private：只有客户端可以缓存，Cache-Control默认值
+no-cache：客户端缓存内容，但是是否使用缓存则需要经过协商缓存来验证决定
+no-store：所有内容都不会被缓存，即不使用强制缓存，也不使用协商缓存
+max-age=xxx：缓存将在xxx秒后失效
+```  
+例如：`Cache-Control: max-age=315360000`
+
+
+
+
+
+#### http协商缓存  
+
+##### 协商缓存  
+协商缓存即由服务器决定是否使用缓存。  
+当强制缓存失效后，浏览器携带标识向服务器发起请求，求服务器根据缓存标识决定是否使用缓存。  
+
+![mandatoryCache2](./img/negotiated.png)
+缓存规则：设置header
+1. Last-Modified / If-Modified-Since  
+2. Etag / If-None-Match (优先级高) 
+
+##### Last-Modified  
+Last-Modified / If-Modified-Since
+浏览器第一次请求一个资源的时候，服务器返回的header中会加上Last-Modify，Last-Modified是服务器响应请求时，返回该资源文件在服务器最后被修改的时间。例如Last-Modify: Thu,31 Dec 2037 23:59:59 GMT。  
+当浏览器再次请求该资源时，request的请求头中会包含If-Modify-Since，该值为缓存之前返回的Last-Modify值，通过此字段告诉服务器该资源上次请求返回的最后被修改时间。服务器收到该请求，发现请求头含有If-Modified-Since字段，则会根据If-Modified-Since的字段值与该资源在服务器的最后被修改时间做对比，若服务器的资源最后修改时间大于If-Modified-Since的字段值，则重新返回资源，状态码为200；否则命中缓存返回304，代表资源无更新不会返回资源内容，可以继续使用缓存文件，并且不会返回Last-Modify。  
+
+##### Etag  
+Etag是服务器响应请求时，返回当前资源文件的一个唯一标识（由服务器生成）。  
+If-None-Match是客户端再次发起请求时，携带上次请求返回的唯一标识Etag值，服务端收到该请求后，发现该请求含有If-None-Match，则会根据If-None-Match的字段值与该资源在服务器的Etag值做对比，一致则返回304，代表资源无更新，继续使用缓存文件，否则重新返回资源，状态码为200。  
+某些文件虽然更新时间（last-modified）变化了，但是内容其实并没有变化。所以用ETag表示文件内容是否变更，相当于一个版本号。Etag要优于Last-Modified。Last-Modified的时间单位是秒，如果某个文件在1秒内改变了多次，那么他们的Last-Modified其实并没有体现出来修改，但是Etag每次都会改变确保了精度；
+
+
+#### 实际场景  
+##### 频繁变动的资源  
+对于频繁变动的资源，首先要用 Cache-Control: no-store 使浏览器不适用缓存，从而每次都请求服务器。  
+##### 不常变动的资源  
+HTML文件一般不缓存或缓存时间很短，所以这里的文件指的是除HTML文件以外的代码文件。  
+当我们用打包工具打包代码时，文件名会被进行哈希处理，只有文件被修改时才会生成新的文件名。  
+这样我们就可以给代码文件设置缓存有效期为一年，Cache-Control: max-age=31536000 ，这样只有当HTML中引入的文件名发生改变之后才会去请求新的代码文件，否则就会一直使用缓存。  
+
+
 #### 浏览器的缓存存放在哪里？  
 ##### 内存缓存(from memory cache)  
+从本地读取缓存，本会话由于访问过该网站，部分文件加载到内存中了，可以直接内存中读取，关闭浏览器或tab页后清空，不会出现from memory cache。  
+
 使用内存中的缓存  
 1. 优点：  
 · 快速读取 （存进进程内存）  
@@ -84,23 +181,23 @@ delete请求：
 2. JS、图片等文件  
    
 ##### 硬盘缓存(from disk cache)  
+从本地读取缓存，内存中没有，读取磁盘中的缓存文件。  
+
 使用硬盘中的缓存  
 1. 写入硬盘缓存，读取则需I/O操作，读取复杂、速度慢。  
 2. CSS文件(每次渲染页面都需要从硬盘读取缓存)  
 
 浏览器读取缓存顺序：memory -> disk  
 
-#### cache-control 与 http强制缓存  
-##### 强制缓存  
-向浏览器缓存查找该请求结果，并根据该结果的缓存规则来决定是否使用该缓存结果的过程。  
-
-
-#### Etag和Last-Modified http协商缓存  
+在 chrome 中强缓存（虽然没有发出真实的 http 请求）的请求状态码返回是 200 (from cache)；而协商缓存如果命中走缓存的话，请求的状态码是 304 (not modified)。 不同浏览器的策略不同，在 Fire Fox中，from cache 状态码是 304.
+其中 from cache 会分为 from disk cache 和 from memory cache. 从内存中获取最快，但是是 session 级别的缓存，关闭浏览器之后就没有了。  
 
 ### HTTPS  
 HTTP + 加密 + 认证 + 完整性保护 = HTTPS  
 HTTP：TCP IP  
 HTTPS：SSL TCP IP  
+HTTPS是身批SSL外壳的HTTP  
+
 SSL是当今世上应用最为广泛的网络安全技术。  
 
 ## 网络连接  
@@ -272,4 +369,12 @@ ajax请求时，浏览器要求当前网页和server必须同源(安全)
 #### 防御  
 抵御CSRF攻击关键在于：在请求中放入攻击者所不能伪造的信息，且该信息不存在于cookie中。  
 开发者可在HTTP请求中以参数形式加入一个随机产生的token，并在服务器端建立一个拦截器来验证这个token。若请求中请求中没有token或token内容不正确，则认为可能是CSRF攻击而拒绝。  
-token可以在用户登录后于服务端产生并放于session中，然后在每次请求把token从session中拿出，与请求中的token进行对比。
+token可以在用户登录后于服务端产生并放于session中，然后在每次请求把token从session中拿出，与请求中的token进行对比。  
+
+参考：  
+1. [前端进阶小书](https://zxpsuper.github.io/Demo/advanced_front_end/browser/cache.html)  
+2. [缓存](https://github.com/amandakelake/blog/issues/41)  
+3. [HTTP缓存之协商缓存和强制缓存](https://zhuanlan.zhihu.com/p/143064070)  
+4. [都2022年了你可知道强制缓存、协商缓存？](https://zhuanlan.zhihu.com/p/484262036)  
+5. [强制缓存和协商缓存的区别](https://cloud.tencent.com/developer/article/1985866)  
+6. [浏览器的强缓存与协商缓存](https://segmentfault.com/a/1190000021661656)
