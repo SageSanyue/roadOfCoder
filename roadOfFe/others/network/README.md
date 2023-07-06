@@ -1,3 +1,35 @@
+- [网络相关知识点](#网络相关知识点)
+  - [http基础知识](#http基础知识)
+    - [http Header](#http-header)
+    - [常见状态码](#常见状态码)
+    - [Restful-API](#restful-api)
+    - [http缓存](#http缓存)
+      - [浏览器的缓存存放在哪里？](#浏览器的缓存存放在哪里)
+        - [内存缓存(from memory cache)](#内存缓存from-memory-cache)
+        - [硬盘缓存(from disk cache)](#硬盘缓存from-disk-cache)
+      - [cache-control 与 http强制缓存](#cache-control-与-http强制缓存)
+        - [强制缓存](#强制缓存)
+      - [Etag和Last-Modified http协商缓存](#etag和last-modified-http协商缓存)
+    - [HTTPS](#https)
+  - [网络连接](#网络连接)
+    - [页面加载形式](#页面加载形式)
+      - [加载过程](#加载过程)
+      - [渲染过程](#渲染过程)
+    - [从输入url到看到页面发生了什么？](#从输入url到看到页面发生了什么)
+  - [ajax](#ajax)
+    - [手写ajax](#手写ajax)
+    - [封装jQuery的API-jQuery.ajax(url, method, body, success, fail)](#封装jquery的api-jqueryajaxurl-method-body-success-fail)
+  - [网络安全](#网络安全)
+    - [浏览器的同源策略](#浏览器的同源策略)
+    - [跨域](#跨域)
+      - [jsonp](#jsonp)
+      - [CORS](#cors)
+    - [XSS攻击](#xss攻击)
+      - [定义](#定义)
+      - [防御](#防御)
+    - [CSRF攻击](#csrf攻击)
+      - [定义](#定义-1)
+      - [防御](#防御-1)
 # 网络相关知识点  
 
 ## http基础知识  
@@ -41,9 +73,35 @@ delete请求：
 
 
 ### http缓存  
-描述一下http的缓存机制 
+描述一下http的缓存机制   
+![cache](./cache.png)
+#### 浏览器的缓存存放在哪里？  
+##### 内存缓存(from memory cache)  
+使用内存中的缓存  
+1. 优点：  
+· 快速读取 （存进进程内存）  
+· 时效性 （进程关闭，该进程内存清空）  
+2. JS、图片等文件  
+   
+##### 硬盘缓存(from disk cache)  
+使用硬盘中的缓存  
+1. 写入硬盘缓存，读取则需I/O操作，读取复杂、速度慢。  
+2. CSS文件(每次渲染页面都需要从硬盘读取缓存)  
+
+浏览器读取缓存顺序：memory -> disk  
+
 #### cache-control 与 http强制缓存  
-#### Etag和Last-Modified http协商缓存
+##### 强制缓存  
+向浏览器缓存查找该请求结果，并根据该结果的缓存规则来决定是否使用该缓存结果的过程。  
+
+
+#### Etag和Last-Modified http协商缓存  
+
+### HTTPS  
+HTTP + 加密 + 认证 + 完整性保护 = HTTPS  
+HTTP：TCP IP  
+HTTPS：SSL TCP IP  
+SSL是当今世上应用最为广泛的网络安全技术。  
 
 ## 网络连接  
 
