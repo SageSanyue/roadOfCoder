@@ -11,6 +11,17 @@
 
 ### 闭包  
 
+```
+const arr = []
+for(var i = 0; i < 3; i++) {
+    arr[i] = function() {
+        return i
+    }
+}
+console.log(arr[1]()) // 结果是什么？
+```  
+以上结果为3，并非预期的1。  
+
 ### this  
 
 ### call aplay bind  
