@@ -33,10 +33,26 @@ value ：重新赋的值
 
 // 子组件sub文件内
 props: ['content', 'a', 'b'] // 可以直接使用对象内部的属性名来接收
+```
+传入一个对象的所有属性
 
+如果想要将一个对象的所有属性都作为 prop 传入，你可以使用不带参数的 v-bind(取代 v-bind:prop-name)  
+
+```
+post: {
+  id: 1,
+  title: 'My Journey with Vue'
+}
+```  
+
+```
+<blog-post v-bind="post"></blog-post>
+<!--与下面的方法等价-->
+<blog-post v-bind:id="post.id"  v-bind:title="post.title"></blog-post>
 ```
 
 https://blog.51cto.com/u_15352995/5295549
+https://github.com/heiye-vn/Vue-Notes/blob/master/Vue.js.md#1044-动态传递prop
 
 参考：  
 1[kanyun](https://www.kancloud.cn/hexiumin/vuea/2190212)
