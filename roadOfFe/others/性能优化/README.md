@@ -46,4 +46,10 @@ https://www.freecodecamp.org/chinese/news/javascript-performance-async-defer/
 作用就是webpack在打包的时候，对异步引入的库代码（lodash）进行代码分割时（需要配置webpack的SplitChunkPlugin插件），为分割后的代码块取得名字。  
 
 参考：  
-1[路由懒加载+webpackChunkName](http://www.zhangqilong.cn/pages/dfab28/#如何命名chunk的名称)
+1[路由懒加载+webpackChunkName](http://www.zhangqilong.cn/pages/dfab28/#如何命名chunk的名称)  
+
+### Wbpack与Vite  
+
+#### Vite  
+
+##### 两者对比  

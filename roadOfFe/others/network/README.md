@@ -28,6 +28,9 @@
   - [ajax](#ajax)
     - [手写ajax](#手写ajax)
     - [封装jQuery的API-jQuery.ajax(url, method, body, success, fail)](#封装jquery的api-jqueryajaxurl-method-body-success-fail)
+    - [fetch](#fetch)
+    - [axios](#axios)
+        - [interceptors](#interceptors)
   - [网络安全](#网络安全)
     - [浏览器的同源策略](#浏览器的同源策略)
     - [跨域](#跨域)
@@ -61,6 +64,9 @@
 
 
 ### Restful-API  
+URL定位资源，用HTTP动词（GET,POST,DELETE,DETC）描述操作。  
+通俗解释：看Url就知道要什么，看http method就知道干什么，看http status code就知道结果如何。  
+
 Restful API是一种新的API设计方法(早已推广使用)  
 传统API设计：把每个url当作一个功能  
 Restful API设计：把每个url当作一个唯一的资源  
@@ -343,6 +349,76 @@ myButton.addEventListener('click', (e) => {
     )
 })
 ```  
+
+### fetch  
+
+### axios  
+
+##### interceptors  
+拦截器是指当发送请求或者得到响应被then或catch处理之前对它们进行拦截，拦截后可对数据做一些处理，比如给请求数据添加头部信息，或对响应数据进行序列化，然后再传给浏览器，这些都可以在拦截器中进行。  
+
+项目应用axios示例：  
+```
+import axios from 'axios'
+import Vue from 'vue'
+import VueCookie from 'vue-cookie'
+
+const vm = new Vue()
+const Message = vm.$message
+
+// 请求超时配置
+axios.defaults.timeout = 100000
+// 状态码配置
+axios.defaults.validateStatus = function (status) {
+  return status >= 200 && status < 600
+}
+axios.defaults.withCredentials = true
+// 请求拦截器(添加头部信息)
+axios.interceptors.request.use(
+  config => {
+    if (config.headers['Content-Type']) {
+      config.headers['Content-Type'] = config.headers['Content-Type']
+    } else {
+      config.headers['Content-Type'] = 'application/json'
+    }
+    Object.assign(config.headers, {
+      'Cache-Control': 'max-age=120',
+      'X-CSRFToken': VueCookie.get('csrftoken')
+    })
+    return config
+  },
+  function (error) {
+    // 对请求错误做处理
+    return Promise.reject(error)
+  }
+)
+// 响应拦截器
+axios.interceptors.response.use(
+  res => {
+    if (res.status === 401) {
+      // 处理响应
+    } else if (res.status >= 400 && res.status < 600) {
+      Message({
+        showClose: false,
+        message: res.data.message || '错误',
+        type: 'error',
+        duration: 2000
+      })
+      return Promise.reject(res)
+    } else {
+      return res
+    }
+  },
+  error => {
+    // 请求错误时做些事
+    Message.error('错误')
+    return Promise.reject(error)
+  }
+)
+
+export default axios
+```  
+参考：https://www.cnblogs.com/konglxblog/p/15596135.html  
 
 
 ## 网络安全  
