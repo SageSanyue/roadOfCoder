@@ -35,6 +35,46 @@ console.log(arr[1]()) // 结果是什么？
 ```  
 以上结果为3，并非预期的1。  
 
+#### 闭包场景  
+通过循环给页面上多个dom节点绑定事件
+```
+<ul id="ul1">
+    <li>111</li>
+    <li>222</li>
+    <li>333</li>
+    <li>444</li>
+</ul>
+
+window.onload = function(){
+    var ul = document.getElementById("ul1");
+    var li = ul.getElementsByTagName('li');
+    for(var i=0;i<li.length;i++){
+        li[i].onclick = function(){
+            alert(i+1);
+        }
+    }
+}
+```
+执行结果为点击任意一项均为4。  
+
+要用闭包改为：(加一层闭包，返回一个函数作为响应事件)  
+  
+```
+window.onload = function(){
+    var ul = document.getElementById("ul1");
+    var li = ul.getElementsByTagName('li');
+    for(var i=0;i<li.length;i++){
+        li[i].onclick = function(num) {
+          return function() {
+            alert(num+1)
+          }
+        }(i)
+    }
+}
+```
+链接为：https://codepen.io/SageXXX/pen/NWEMQQV  
+参考阅读：https://zhuanlan.zhihu.com/p/87950150
+
 ### this  
 
 ### call aplay bind  

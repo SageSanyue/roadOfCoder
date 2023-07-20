@@ -20,6 +20,28 @@ value ：重新赋的值
 
 `this.$set(this.search, 'costRemarks', [costName])`    
 
+### 语法  
+
+#### v-if和v-show  
+v-if: 根据判断条件动态增删DOM元素  
+适合在切换不频繁的场景，当为 false 时，可以减少初次渲染时间  
+
+v-show: 根据判断条件动态显示或隐藏元素，通过控制元素的CSS属性display来完成实现效果  
+初始渲染代价高，切换代价小，适合需要频繁切换的场景
+
+##### 对生命周期的影响  
+v-show:  
+当v-show指令附属于普通元素时，指令状态变化不会影响父组件生命周期；  
+当v-show附属于组件时，指令状态变化对父组件和自身组件生命周期都无影响，切换时组件始终保持在 mounted 钩子；  
+
+v-if:  
+当v-if指令附属于普通元素时，指令状态变化会导致父组件DOM发生变化，父组件将会更新视图，所以会触发父组件beforeUpdate和updated钩子函数；  
+当v-if指令附属于组件时，指令状态变化会触发父组件beforeUpdate和updated钩子函数，但是对于本身组件的生命周期的影响是不一样的-  
+· v-if从false切换到true时，会触发beforeCreate，created，beforeMount，mounted钩子;  
+· v-if从true切换到false时，会触发beforeDestroy和destroyed钩子;  
+
+
+
 ### 组件通信  
 
 #### 父子组件通信  
