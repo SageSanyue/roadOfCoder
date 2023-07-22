@@ -40,16 +40,140 @@ https://www.freecodecamp.org/chinese/news/javascript-performance-async-defer/
 
 #### IntersectionObserver监听元素进入离开指定可视区域  
 
+可用于图片懒加载等场景，如设置一个v-lazy自定义指令完成图片懒加载：
+```JavaScript
+const LazyLoad = {
+    // install方法
+    install(Vue,options){
+    	  // 代替图片的loading图
+        let defaultSrc = options.default;
+        Vue.directive('lazy',{
+            bind(el,binding){
+                LazyLoad.init(el,binding.value,defaultSrc);
+            },
+            inserted(el){
+                // 兼容处理
+                if('IntersectionObserver' in window){
+                    LazyLoad.observe(el);
+                }else{
+                    LazyLoad.listenerScroll(el);
+                }
+                
+            },
+        })
+    },
+    // 初始化
+    init(el,val,def){
+        // data-src 储存真实src
+        el.setAttribute('data-src',val);
+        // 设置src为loading图
+        el.setAttribute('src',def);
+    },
+    // 利用IntersectionObserver监听el
+    observe(el){
+        let io = new IntersectionObserver(entries => {
+            let realSrc = el.dataset.src;
+            if(entries[0].isIntersecting){
+                if(realSrc){
+                    el.src = realSrc;
+                    el.removeAttribute('data-src');
+                }
+            }
+        });
+        io.observe(el);
+    },
+    // 监听scroll事件
+    listenerScroll(el){
+        let handler = LazyLoad.throttle(LazyLoad.load,300);
+        LazyLoad.load(el);
+        window.addEventListener('scroll',() => {
+            handler(el);
+        });
+    },
+    // 加载真实图片
+    load(el){
+        let windowHeight = document.documentElement.clientHeight
+        let elTop = el.getBoundingClientRect().top;
+        let elBtm = el.getBoundingClientRect().bottom;
+        let realSrc = el.dataset.src;
+        if(elTop - windowHeight<0&&elBtm > 0){
+            if(realSrc){
+                el.src = realSrc;
+                el.removeAttribute('data-src');
+            }
+        }
+    },
+    // 节流
+    throttle(fn,delay){
+        let timer; 
+        let prevTime;
+        return function(...args){
+            let currTime = Date.now();
+            let context = this;
+            if(!prevTime) prevTime = currTime;
+            clearTimeout(timer);
+            
+            if(currTime - prevTime > delay){
+                prevTime = currTime;
+                fn.apply(context,args);
+                clearTimeout(timer);
+                return;
+            }
+
+            timer = setTimeout(function(){
+                prevTime = Date.now();
+                timer = null;
+                fn.apply(context,args);
+            },delay);
+        }
+    }
+
+}
+export default LazyLoad;
+```
+
 ## Weppack相关  
 通常我们还会为延迟加载的路由添加“魔法注释”(webpackChunkName)来自定义包名，在打包时，该路由组件会被单独打包出来。
 
 作用就是webpack在打包的时候，对异步引入的库代码（lodash）进行代码分割时（需要配置webpack的SplitChunkPlugin插件），为分割后的代码块取得名字。  
 
-参考：  
-1[路由懒加载+webpackChunkName](http://www.zhangqilong.cn/pages/dfab28/#如何命名chunk的名称)  
+### Webpack基础  
+
+#### Webpack热更新  
+Webpack热更新原理  
+
+
+ 
 
 ### Wbpack与Vite  
 
+
+
 #### Vite  
+vite的特点:  
+- 轻量
+- 按需打包
+- HMR(热渲染依赖)  
+
+Vite 执行vite serve 时，内部直接启动了web Server, 并不会先编译所有的代码文件。
+
 
 ##### 两者对比  
+如果应用过于复杂，使用Webpack 的开发过程会出现以下问题：  
+Webpack Dev Server 冷启动时间会比较长(webpack dev server 在启动时需要先build一遍)；  
+Webpack HMR 热更新的反应速度比较慢；  
+
+- webpack先打包再启动开发服务器，请求服务器时直接给予打包后的结果；Vite直接启动开发服务器，请求哪个模块再对哪个模块进行实时编译，故开发热更新速度极快；  
+- 由于现代浏览器本身就支持ES Modules，会主动发起请求去获取所需文件。Vite利用这点，将开发环境下的模块文件作为浏览器要执行的文件，而不是像webpack先打包文件再交给浏览器执行；
+- 在HRM方面，当某个模块内容改变时，Vite让浏览器去重新请求该模块即可，而不是像webpack重新将该模块的所有依赖重新编译； 
+- 当需要打包到生产环境时，Vite使用传统的rollup进行打包，所以，Vite的优势是体现在开发阶段，另外，由于Vite使用的是ES Module，所以代码中不可以使用CommonJs；  
+
+
+参考：  
+1 [路由懒加载+webpackChunkName](http://www.zhangqilong.cn/pages/dfab28/#如何命名chunk的名称) 
+2 [看云](https://static.kancloud.cn/vvmily_king/vvmily/2765290) 
+3 [浅谈Vite原理](https://juejin.cn/post/6923417451333959694)  
+4 [web前端面试](https://vue3js.cn/interview/webpack/HMR.html)
+5 [介绍下webpack热更新原理](https://github.com/Advanced-Frontend/Daily-Interview-Question/issues/118)  
+6 [45道Promise面试题](https://juejin.cn/post/6844904077537574919)  
+7 [web前端面试 - 面试官系列](https://vue3js.cn/interview/vue/directive.html#三、应用场景)
