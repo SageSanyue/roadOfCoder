@@ -185,11 +185,35 @@ footer {
 
 回流的成本开销要高于重绘，而且一个节点的回流往往会导致子节点以及同级节点的回流， 所以尽量避免回流。  
 
+#### 其他问题  
 
-作者：前端南玖
-链接：https://juejin.cn/post/7028385332391477255
-来源：稀土掘金
-著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+##### 1px问题  
+1 物理像素线（也就是普通屏幕下 1px ，高清屏幕下 0.5px 的情况）采用 transform 属性 scale 实现  
+
+```CSS
+.mod_grid {
+    position: relative;
+    &::after {
+        // 实现1物理像素的下边框线
+        content: '';
+        position: absolute;
+        z-index: 1;
+        pointer-events: none;
+        background-color: #ddd;
+        height: 1px;
+        left: 0;
+        right: 0;
+        top: 0;
+        @media only screen and (-webkit-min-device-pixel-ratio: 2) {
+            -webkit-transform: scaleY(0.5);
+            -webkit-transform-origin: 50% 0%;
+        }
+    }
+    ...
+}
+```
+
+
 
 ## SCSS 
 
@@ -201,3 +225,38 @@ footer {
 
 
 ## less  
+
+## 响应式开发  
+
+### rem  
+
+#### rem弹性布局  
+rem 弹性布局的核心在于根据视窗大小变化动态改变根元素的字体大小  
+给根元素的字体大小设置随着视窗变化而变化的 vw 单位，这样就可以实现动态改变其大小  
+其他元素的文本字号大小、布局高宽、间距、留白都使用 rem 单位  
+限制根元素字体大小的最大最小值，配合 body 加上最大宽度和最小宽度，实现布局宽度的最大最小限制  
+
+```SCSS
+// rem 单位换算：定为 75px 只是方便运算，750px-75px、640-64px、1080px-108px，如此类推
+$vw_fontsize: 75; // iPhone 6尺寸的根元素大小基准值
+@function rem($px) {
+     @return ($px / $vw_fontsize ) * 1rem;
+}
+// 根元素大小使用 vw 单位
+$vw_design: 750;
+html {
+    font-size: ($vw_fontsize / ($vw_design / 2)) * 100vw; 
+    // 同时，通过Media Queries 限制根元素最大最小值
+    @media screen and (max-width: 320px) {
+        font-size: 64px;
+    }
+    @media screen and (min-width: 540px) {
+        font-size: 108px;
+    }
+}
+// body 也增加最大最小宽度限制，避免默认100%宽度的 block 元素跟随 body 而过大过小
+body {
+    max-width: 540px;
+    min-width: 320px;
+}
+```
