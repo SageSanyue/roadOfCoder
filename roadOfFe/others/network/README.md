@@ -358,7 +358,7 @@ myButton.addEventListener('click', (e) => {
 拦截器是指当发送请求或者得到响应被then或catch处理之前对它们进行拦截，拦截后可对数据做一些处理，比如给请求数据添加头部信息，或对响应数据进行序列化，然后再传给浏览器，这些都可以在拦截器中进行。  
 
 项目应用axios示例：  
-```
+```JavaScript
 import axios from 'axios'
 import Vue from 'vue'
 import VueCookie from 'vue-cookie'

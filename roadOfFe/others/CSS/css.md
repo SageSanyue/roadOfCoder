@@ -84,6 +84,48 @@ html,body{
 ```
 预览链接：https://codesandbox.io/s/dazzling-jepsen-2c2rhr?file=/index.html  
 
+##### 双飞翼布局  
+三栏布局中间自适应  
+```HTML
+<body>
+  <div class="box">
+    <div class="middle">
+      <div class="content">中间</div>
+    </div>
+    <div class="left">左边</div>
+    <div class="right">右边</div>
+  </div>
+</body>
+```  
+
+```CSS  
+div {
+  height: 100vh;
+  background-color: gray;
+}
+.middle {
+  float: left;
+  width: 100%;
+}
+.middle .content {
+  margin: 0 200px 0 150px;
+  background-color: yellow;
+}
+.left {
+  float: left;
+  width: 150px;
+  margin-left: -100%;
+}
+.right {
+  float: left;
+  width: 200px;
+  margin-left: -200px;
+}
+```   
+
+预览链接：https://codesandbox.io/s/trusting-easley-hhtmjd?file=/index.html  
+
+
 ##### 三栏布局(圣杯布局)  
 构建圣杯布局时，对 HTML 的结构是有一定的要求，即 主内容为先 。早期这样做，是让用户在 Web 页面加载缓慢时，就能先看到主内容。  
 ```
@@ -188,6 +230,8 @@ footer {
 #### 其他问题  
 
 ##### 1px问题  
+1px问题在Retina 高清屏上才会出现，由于高清屏用多个物理像素显示一个css像素，比如iphone6，由于dpr为2，所以1css像素会用2个物理像素显示，所以看起来1px的线条会特别宽。  
+
 1 物理像素线（也就是普通屏幕下 1px ，高清屏幕下 0.5px 的情况）采用 transform 属性 scale 实现  
 
 ```CSS
@@ -214,6 +258,26 @@ footer {
 ```
 
 
+解决1px问题的方案有很多，有背景图、阴影、缩放等等，笔者在这里只介绍笔者曾经使用过得方案，就是缩放。原理就是边框固定，把元素整体先放大然后再缩小。  
+
+```CSS
+.ele {
+    position: relative;
+    width: 100px;
+    height: 80px;
+    &::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        border: 1px solid red;
+        width: 200%;
+        height: 200%;
+        transform: scale(0.5);
+        transform-origin: left top;
+    }
+}  
+```
 
 ## SCSS 
 
@@ -259,4 +323,49 @@ body {
     max-width: 540px;
     min-width: 320px;
 }
+```  
+
+#### postcss-pxtorem插件  
+https://github.com/cuth/postcss-pxtorem  
+
+#### amfe-flexible  
+
+### vm  
+
+#### postcss-px-to-viewport  
+
+## 常见功能  
+
+### 窗口大小  
+窗口大小常见API  
 ```
+screen.width 获取屏幕的宽度 跟浏览器无关
+screen.height 获取屏幕的高度 跟浏览器无关
+screen.availWidth 获取屏幕有效宽度 如果任务栏设置在左右两侧的话，去除任务栏宽度
+screen.availHeight 获取屏幕有效高度 去除任务栏高度
+
+window.outerWidth 获取浏览器宽度 包括浏览器所有包括侧边栏、窗口镶边和调正窗口大小的边框。
+window.outerHeight 获取浏览器高度 包括浏览器所有包括侧边栏、窗口镶边和调正窗口大小的边框。
+window.innerWidth：获取浏览器视觉视口宽度（包括滚动条）。
+window.innerHeight：获取浏览器视觉视口高度（包括滚动条）。
+document.documentElement.clientWidth：获取浏览器布局视口宽度。不包括滚动条。
+document.documentElement.clientHeight：获取浏览器布局视口高度。不包括滚动条。
+
+dom.clientWidth：获取元素的宽度 包括内容和内边距
+dom.clientHeight：获取元素的高度 包括内容和内边距
+dom.offsetWidth：获取元素的宽度 包括内容、内边距、滚动条、边框。
+dom.offsetHeight：获取元素的高度 包括内容、内边距、滚动条、边框。
+dom.scrollWidth：获取元素内容实际的宽度 包括内边距。
+dom.scrollHeight：获取元素内容实际的高度 包括内边距。
+
+dom.clientTop：获取元素上边框高度
+dom.clientLeft：获取元素左边框宽度
+dom.offsetTop：获取元素距离页面顶部高度
+dom.offsetLeft：获取元素距离页面左边的宽度
+dom.scrollTop：获取元素滚动条在垂直方向上滚动的距离
+dom.scrollLeft：获取元素滚动条在水平方向上滚动的距离
+```
+
+参考：  
+1[移动端H5网页开发常见问题汇总](https://juejin.cn/post/7055599228478816270)  
+2[讲一讲css布局中的双栏布局和三栏布局](https://zhuanlan.zhihu.com/p/106079715)

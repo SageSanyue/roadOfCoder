@@ -27,6 +27,16 @@
         - [事件处理程序的参数](#事件处理程序的参数)
         - [事件处理程序的运行环境](#事件处理程序的运行环境)
         - [多个事件处理程序调用规则](#多个事件处理程序调用规则)
+  - [H5-Hybrid相关](#h5-hybrid相关)
+    - [App和H5通信](#app和h5通信)
+      - [App端调用H5端方法](#app端调用h5端方法)
+        - [Android调用H5端方法](#android调用h5端方法)
+        - [IOS调用H5端的方法](#ios调用h5端的方法)
+      - [H5端调用App端方法](#h5端调用app端方法)
+        - [H5调用Android端方法](#h5调用android端方法)
+        - [H5调用IOS端方法](#h5调用ios端方法)
+      - [Android与IOS的双向通讯注意点](#android与ios的双向通讯注意点)
+      - [区分环境](#区分环境)
 
 # js基础  
 
@@ -438,3 +448,168 @@ div1.detachEvent('onclick', div1BubbleFun)  // 相应的，从对象上删除事
 
 参考：https://www.zhihu.com/people/xu-sai-jun-12/posts?page=3
 
+## H5-Hybrid相关  
+
+### App和H5通信
+嵌入到App里面的H5页面动态通信  
+通信分为H5端调用原生App端方法和原生App端调用H5端方法。App又分为IOS和Android两端，他们之间是有区别的  
+
+#### App端调用H5端方法  
+App端调用H5端的方法，调用的必须是绑定到window对象上面的方法。  
+把say方法注册到window对象上。  
+```Java
+window.say = (name) => {
+ alert(name)
+}
+```
+
+##### Android调用H5端方法  
+```Java
+private void isAutoUser () {
+    String username = mSpHelper.getAutoUser();
+    
+    if (TextUtils.isEmpty(username)) {
+        return;
+    }
+
+    // 1.Android: loadUrl (Android系统4.4- 支持)
+    // 该方法的弊端是无法获取函数返回值；
+    // say 方法是H5端挂载在window对象上的方法。
+    mWebView.loadUrl("javascript:say('" + username + "')")
+
+    // 2.Android: evaluateJavascript (Android系统4.4+ 支持)
+    // 这里着重介绍 evaluateJavascript，这也是目前主流使用的方法。
+    // 该方法可以在回调方法中获取函数返回值；
+    // say 方法是H5端挂载在window对象上的方法。
+    mWebView.evaluateJavascript("javascript:say('" + username + "')", new ValueCallback<String>() {
+        @Override
+        public void onReceiveValue(String s) {
+          //此处为 js 返回的结果
+        }
+    });
+    
+    // 下面这两种通信方式用的不多，这里就不着重介绍了。
+    
+    // 3.Android: loadUrl (Android系统4.4- 支持)
+    // 直接打开某网页链接并传递参数，这种也能给H5端传递参数
+    // mWebView.loadUrl("file:///android_asset/shop.html?name=" + username);
+    
+    // 4. Android端还可以通过重写onJsAlert, onJsConfirm, onJsPrompt方法拦截js中调用警告框，输入框，和确认框。
+}
+```
+
+##### IOS调用H5端的方法  
+IOS使用不同的语言有不同的调用方法。  
+
+```Objective-C
+// Objective-C
+// say 方法是H5端挂载在window对象上的方法
+[self.webView evaluateJavaScript:@"say('params')" completionHandler:nil];
+```  
+
+```Swift
+// Swift
+// say 方法是H5端挂载在window对象上的方法
+webview.stringByEvaluatingJavaScriptFromString("say('params')")
+```
+
+#### H5端调用App端方法  
+提供给H5端调用的方法，Android 与 IOS 分别拥有对应的挂载方式。分别对应是:苹果 UIWebview JavaScriptCore 注入、安卓 addJavascriptInterface 注入、苹果 WKWebView scriptMessageHandler 注入。  
+
+
+
+##### H5调用Android端方法  
+安卓 addJavascriptInterface 注入  
+```Java
+// 这里的对象名 androidJSBridge 是可以随意更改的，不固定。
+addJavascriptInterface(new MyJaveScriptInterface(mContext), "androidJSBridge");
+
+// MyJaveScriptInterface类里面的方法
+@JavascriptInterface
+public aliPay (String payJson) {
+  aliPayHelper.pay(payJson);
+  // Android 在暴露给 H5端调用的方法能直接有返回值。
+  return 'success';
+}
+```  
+H5调用Android端暴露的方法  
+```JavaScript
+// 这里的 androidJSBridge 是根据上面注册的名字来的。
+// js调用Android Native原生方法传递的参数必须是基本类型的数据，不能是引用数据类型，如果想传递引用类型需要使用JSON.stringify()。
+const result = window.androidJSBridge.aliPay('string参数');
+console.log(result);
+```
+
+##### H5调用IOS端方法  
+苹果 WKWebView scriptMessageHandler 注入  
+```
+#pragma mark -  OC注册供JS调用的方法 register方法
+- (void)addScriptFunction {
+    self.wkUserContentController = [self.webView configuration].userContentController;
+
+    [self.wkUserContentController addScriptMessageHandler:self name:@"register"];
+}
+
+#pragma mark - register方法
+- (void)register:(id)body {
+     NSDictionary *dict = body;
+    [self.userDefaults setObject:[dict objectForKey:@"password"] forKey:[dict objectForKey:@"username"]];
+    不能直接返回结果，需要再次调用H5端的方法，告诉H5端注册成功。
+    [self.webView evaluateJavaScript:@"registerCallback(true)" completionHandler:nil];
+}
+```  
+ios 在暴露给 web 端调用的方法不能直接有返回值，如果需要有返回值需要再调用 web 端的方法来传递返回值。（也就是需要两步完成）  
+
+H5调用IOS端暴露的方法。  
+```JavaScript  
+// 与android不同，ios这里的webkit.messageHandlers是固定写法，不能变。
+// 不传参数
+window.webkit.messageHandlers.register.postMessage(null);
+// 传递参数
+// 与android不同，ios这里的参数可以是基本类型和引用数据类型。
+window.webkit.messageHandlers.register.postMessage(params);
+```  
+
+#### Android与IOS的双向通讯注意点  
+H5端调用Android端方法使用window.androidJSBridge.方法名(参数)，这里的androidJSBridge名称不固定可自定义。而H5端调用IOS端方法固定写法为window.webkit.messageHandlers.方法名.postMessage(参数)。  
+
+H5端调用Android端方法传递的参数只能是基本数据类型，如果需要传递引用数据类型需要使用JSON.stringfy()处理。而IOS端既可以传递基本数据类型也可以传递引用数据类型。  
+
+H5端调用Android端方法可以直接有返回值。而IOS端不能直接有返回值。  
+
+
+#### 区分环境  
+在H5端调用Android和IOS方法的方式都不同我们应该怎么区分当前是什么环境  
+
+```JavaScript
+/**
+ * 判断手机系统类型
+ * @returns phoneSys
+ */
+function phoneSystem() {
+  var u = navigator.userAgent.toLowerCase();
+  let phoneSys = ''
+  if (/android|linux/.test(u)) {//安卓手机
+    phoneSys = 'android'
+  } else if (/iphone|ipad|ipod/.test(u)) {//苹果手机
+    phoneSys = 'ios'
+  } else if (u.indexOf('windows Phone') > -1) {//winphone手机
+    phoneSys = 'other'
+  }
+  return phoneSys
+}
+
+// 调用
+// 这里只区分了方法的调用方式，参数的类型和方法的返回值待读者自己处理。
+function call(message) {
+  let phoneSys = phoneSystem()
+  if (typeof window.webkit != "undefined" && phoneSys == 'ios') {
+    window.webkit.messageHandlers.call.postMessage(message);
+  } else if (typeof jimiJS !== "undefined" && phoneSys == 'android') {
+    window.jimiJS.call(message);
+  }
+}
+```
+
+参考：
+1[移动端开发必备知识-Hybrid App](https://juejin.cn/post/7062967241268019214)
