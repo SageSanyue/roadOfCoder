@@ -277,3 +277,36 @@ function deepFlatten(arr) {
 }
 
 getSubmitData(origin); // 预期得到result数据结构
+
+// 其实deepFlatten直接写成这样就行
+// function deepFlatten(arr) {
+//   return [].concat(...arr);
+// }
+
+// 方法2：优化后
+// 即getSubmitData不用再调额外的函数了
+function getSubmitData(origin) {
+  if (!Array.isArray(origin)) return;
+
+  let result = origin.reduce((arr, item) => {
+    let obj = {
+      city_code: item.city_code,
+      province_code: item.province_code,
+      community_list: [],
+    };
+
+    if (item.presentCityCommunity && item.presentCityCommunity.list.length) {
+      let _communitys = item.presentCityCommunity.list.map(
+        (item) => item.capitalCommunities
+      );
+
+      obj.community_list = [].concat(..._communitys);
+    }
+
+    arr.push(obj);
+
+    return arr;
+  }, []);
+
+  console.log(result);
+}
