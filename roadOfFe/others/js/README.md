@@ -9,6 +9,7 @@
         - [ES5-Object.create()方法](#es5-objectcreate方法)
     - [闭包](#闭包)
       - [闭包场景](#闭包场景)
+    - [柯里化](#柯里化)
     - [this](#this)
     - [call aplay bind](#call-aplay-bind)
     - [手写bind](#手写bind)
@@ -116,6 +117,44 @@ window.onload = function(){
 ```
 链接为：https://codepen.io/SageXXX/pen/NWEMQQV  
 参考阅读：https://zhuanlan.zhihu.com/p/87950150
+
+### 柯里化  
+题目:add(1)(2)(3)怎么实现?  
+
+```JavaScript
+function curryFn(fn, ...params) {
+    return params.length >= fn.length ? fn(...params) : (...params2)=>curryFn(fn, ...params, ...params2)
+}
+var add = (z,x,y)=>z+x+y
+var addCurryFn = curryFn(add)
+addCurryFn(1,2,3)  //6
+addCurryFn(1,2)(3)  //6
+addCurryFn(1)(2,3)  //6
+addCurryFn(1)(2)(3)  //6
+```  
+问题升级：实现无限调用  
+实现一个可以无限调用的函数，且每次调用都能得到最终结果  
+支持`addCurry(1)` `addCurry(1)(2)` `addCurry(1)(2)(3,4)` `addCurry(1)(2)(3,4)(5)(6,7)`  
+  
+```JavaScript
+var add = function(...args) {
+    var result = args.reduce((acc,cur)=>acc+cur)
+    var _add = (...params)=>add(result, ...params)
+    _add.toString = ()=>result
+    return _add
+}
++add(1)(2)      // 3
++add(1)(2)(3)   // 6
++add(1)(2,3)(4) // 10
++add(1)(2,3)    // 6
+```  
+解析：  
+关于Object.prototype.toString()方法：每个对象都有一个 toString() 方法，当该对象被表示为一个文本值时，或者一个对象以预期的字符串方式引用时自动调用。  
+我们函数内部总是返回一个新函数，这也是为什么要将toString绑在新函数上的缘故，相当于我们覆盖了原型链上的toString方法，让它来帮我返回值。在调用前添加了+，这样函数执行完毕后，因为+会自动调用我们定义的toString方法，从而返回了我们期望的结果。 
+
+
+参考：
+1[柯里化无限调用](https://www.cnblogs.com/echolun/p/16124496.html)
 
 ### this  
 

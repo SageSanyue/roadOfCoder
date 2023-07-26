@@ -10,6 +10,7 @@
         - [Catch 的后续链式操作](#catch-的后续链式操作)
         - [错误传递](#错误传递)
       - [组合](#组合)
+        - [手写Promise](#手写promise)
         - [Promise.allSettled()](#promiseallsettled)
         - [Promise.all()](#promiseall)
         - [Promise.race()](#promiserace)
@@ -209,7 +210,10 @@ for (const f of [func1, func2, func3]) {
   result = await f(result);
 }
 /* use last result (i.e. result3) */
-```
+```  
+
+##### 手写Promise  
+
 
 
 

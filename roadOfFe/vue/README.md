@@ -145,7 +145,58 @@ https://github.com/heiye-vn/Vue-Notes/blob/master/Vue.js.md#1044-动态传递pro
 
 ## Vue-Router  
 
+### 路由  
+
+#### 前端路由与后端路由  
+ 
+##### 前端路由  
+前端路由：在SPA应用，大部分页面结构不变，只改变部分内容的使用  
+利：不需要每次都从服务器全部获取，快速展现给用户  
+弊：使用浏览器的前进、后退键的时候会重新发送请求，没有合理地利用缓存。单页面无法无法在前进、后退的时候记住之前滚动的位置。  
+
+##### 后端路由  
+后端路由：通过用户请求的url导航到具体的html页面；每跳转到不同的URL，都是重新访问服务端，然后服务端返回页面。jsp、php、asp等技术实现的用户能通过URL访问的页面，大多是通过后端路由匹配之后再返回给浏览器的。浏览器在地址栏中切换不同的URL时，每次都向后台服务器发出请求，服务器响应请求，在后端路由映射表中查找对应路由的页面和数据，在后台拼接html文件返回给前端，并且每次切换页面时，浏览器都会刷新页面。  
+
+##### SPA单页面利弊  
+单页面跳转仅刷新局部资源 ，公共资源(js、css等)仅需加载一次。  
+页面跳转时使用js中的append/remove或者show/hide的方式来进行页面内容的更换。数据传递可通过全局变量或者参数传递行相关数据交互。  
+
+##### MPA多页面利弊  
+页面经常需要切换，切换效果取决于浏览器和网络情况，对用户体验会有一定负面影响。无法充分利用vue的路由和状态保持，在多个页面之间共享和同步数据状态会成为一个难题。  
+
+##### hash模式  
+在HTML5的history模式出现之前，基本都是使用 hash 模式来实现前端路由。 hash值变化不会导致向服务器发送请，hash改变会触发浏览器hashchange事件，浏览器的前进后退也能对其进行控制。  
+```JavaScript
+// 监听hash变化，点击浏览器的前进后退会触发
+window.addEventListener('hashchange', function(event){ 
+  let newURL = event.newURL; // hash 改变后的新 url
+  let oldURL = event.oldURL; // hash 改变前的旧 url
+},false)
+```
+
+##### history模式  
+在 HTML5之前，浏览器就已经有了history对象。但在早期的history中只能用于多页面的跳转。  
+```JavaScript
+history.go(-1);       // 后退一页
+history.go(2);        // 前进两页
+history.forward();     // 前进一页
+history.back();      // 后退一页
+```  
+
+在 HTML5 的规范中，history新增了以下几个API:
+1. history.pushState()         // 添加新的状态到历史状态栈
+2. history.replaceState()      // 用新的状态代替当前状态
+3. history.state                // 返回当前状态对象  
+
+由于 `history.pushState()` 和 `history.replaceState()` 可以改变url的同时不刷新页面，所以在具备了实现前端路由的能力。  
+
+
+
+
+
 ### Vue-Router原理  
+
+
 HTML5 history api  
 
 
@@ -158,4 +209,5 @@ HTML5 history api
 参考：  
 1[kanyun](https://www.kancloud.cn/hexiumin/vuea/2190212)
 2[web前端面试 - 面试官系列](https://vue3js.cn/interview/vue/spa.html#三、实现一个spa)
+3[一文读尽前端路由、后端路由、单页面应用、多页面应用](https://segmentfault.com/a/1190000021748190)
 
