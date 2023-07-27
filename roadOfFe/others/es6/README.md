@@ -213,7 +213,10 @@ for (const f of [func1, func2, func3]) {
 ```  
 
 ##### 手写Promise  
+实现一个简易版 Promise  
 
+参考:  
+1[前端面试葵花宝典](https://docs.wuwei.fun/JS/promise.html)
 
 
 

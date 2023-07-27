@@ -1,0 +1,17 @@
+#手写各种数据处理  
+
+## 手写拍平  
+flattenDepth([1,[2,3, [4]]])  
+
+
+```JavaScript
+function flattenDepth(arr) {
+    return arr.flat(Infinite)
+}
+
+function flattenDepth(arr) {
+    return arr.reduce(function(acc, cur) {
+        return acc.concat(Array.isArray(cur) ? flattenDepth : cur)
+    }, [])
+}
+```

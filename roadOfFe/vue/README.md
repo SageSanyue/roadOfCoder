@@ -1,3 +1,44 @@
+- [Vue Road](#vue-road)
+  - [Vue3](#vue3)
+    - [API风格](#api风格)
+      - [选项式API](#选项式api)
+      - [组合式API](#组合式api)
+  - [Vue2](#vue2)
+    - [Vue2原理](#vue2原理)
+      - [Vue2的缺陷是什么？](#vue2的缺陷是什么)
+      - [$set()具体使用场景](#set具体使用场景)
+      - [$forceUpdate()](#forceupdate)
+      - [$nextTick()](#nexttick)
+    - [语法](#语法)
+      - [v-if和v-show](#v-if和v-show)
+        - [对生命周期的影响](#对生命周期的影响)
+    - [组件通信](#组件通信)
+      - [父子组件通信](#父子组件通信)
+        - [给子组件传递多个props达到类似解构赋值的写法](#给子组件传递多个props达到类似解构赋值的写法)
+  - [Vue-Router](#vue-router)
+    - [路由](#路由)
+      - [前端路由与后端路由](#前端路由与后端路由)
+        - [前端路由](#前端路由)
+        - [后端路由](#后端路由)
+        - [SPA单页面利弊](#spa单页面利弊)
+        - [MPA多页面利弊](#mpa多页面利弊)
+        - [hash模式](#hash模式)
+        - [history模式](#history模式)
+    - [Vue-Router原理](#vue-router原理)
+  - [Vuex](#vuex)
+  - [Pinia](#pinia)
+  - [Vue2相关](#vue2相关)
+    - [SPA](#spa)
+      - [SPA优化](#spa优化)
+        - [SPA首屏加载优化](#spa首屏加载优化)
+    - [MPA](#mpa)
+    - [SSR](#ssr)
+    - [CSR](#csr)
+    - [预渲染Prerender](#预渲染prerender)
+      - [服务器端渲染 vs 预渲染 (SSR vs Prerendering)](#服务器端渲染-vs-预渲染-ssr-vs-prerendering)
+      - [弊端](#弊端)
+    - [PWA](#pwa)
+
 # Vue Road  
 
 ## Vue3  
@@ -204,10 +245,105 @@ HTML5 history api
 
 ## Pinia  
 
+## Vue2相关  
+
+### SPA  
+
+#### SPA优化  
+
+##### SPA首屏加载优化  
+SPA首屏优化策略：  
+我们常用的SPA首屏优化策略是使用 动态加载路由组件。那么即在应用初始，并不加载所有的子路由组件，而是在用户访问时再下载相应的子路由组件。本质上，我们将下载子路由组件的时间均摊到各个子路由组件自身，而不是在首屏集中处理。
+以下以 vue-router 为例：  
+常用的一种实现是 Vue下的 异步组件 配合webpack的 代码分割 以及babel 转义（syntax-dynamic-import）草案的动态加载语法 import() 来实现动态加载路由组件。import() 默认在内部调用Promise函数，最终返回一个Promise对象，对于不支持Promise的浏览器，需要引入 es6-promise 或 promise-polyfill 或者直接引入 polyfill.io 动态引入polyfill来做兼容。  
+
+```JavaScript
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+
+
+Vue.use(VueRouter)
+
+
+// 静态加载，不论用户是否访问该页面都在初始化应用时加载
+import home from '~/components/home')
+
+
+// 动态加载方式一，仅在 webpack 请求该模块的 chunk 时才会加载，即只有在用户访问时加载
+// 该组件
+const app = () => import(/* webpackChunkName: "app" */ '~/components/app')
+
+
+export default new VueRouter({
+  routes: [
+    {
+      path: '/',
+      component: home,
+      children: [
+        {
+          path: '/app',
+          component: app
+        },
+        {
+          path: '/info',
+          /**
+           * 动态加载方式二
+           * 1. chunk 命名必须配合 webpack 中 output.chunkFileName: '[name].js' 指
+           * 定占位符为 `[name]` 使用
+           */
+          component: () => import(/* webpackChunkName: "info" */ '~/components/info')
+        }
+      ]
+    }
+  ]
+})
+```  
+以上关键点在于使用 import('./module') 代替静态模块加载语法 import module from './module'。  
+/* webpackChunkName: "info" */ 注释用于将单个路由下所有组件都打包在同一个异步 chunk 中。即被请求的模块和其应用的所有子模块都会分离到同一个异步 chunk 中。  
+
+```JavaScript
+// webpack 相应配置为:
+module.exports = {
+  // ...
+  output: {
+    filename; '[name].bundle.js',
++    chunkFileName: '[name].bundle.js',
+    path: path.resolve(__dirname, 'dist')
+  }
+  // ...
+}
+```  
+以上配置中，output.chunkFilename 用于定义非入口 chunk 的名字。这些文件名在 runtime 时生成，以便于发送 chunks 请求。基于这一点像 [name] 和 [chunkhash] 的占位符需要通过 webpack runtime 将从 chunk id 到占位符的值（该映射即是 [id] 占位符）映射到输出的 bundle 中。当任何 chunk 的占位符的值改变时，都将导致 bundle 失效。output.chunkFilename 的默认值为 [id].js 或根据 output.filename 进行推断（即将其中的 [name] 替换为 [id]，或者直接使用 output.filename 中的 [id] 占位符。）  
+
+
+### MPA  
+
+### SSR  
+
+### CSR  
+
+### 预渲染Prerender  
+SPA预渲染  
+
+#### 服务器端渲染 vs 预渲染 (SSR vs Prerendering)   
+如果你调研服务器端渲染 (SSR) 只是用来改善少数营销页面（例如 /, /about, /contact 等）的 SEO，那么你可能需要预渲染。无需使用 web 服务器实时动态编译 HTML，而是使用预渲染方式，在构建时 (build time) 简单地生成针对特定路由的静态 HTML 文件。优点是设置预渲染更简单，并可以将你的前端作为一个完全静态的站点。   
+
+如果你使用 webpack，你可以使用 prerender-spa-plugin 轻松地添加预渲染。它已经被 Vue 应用程序广泛测试 - 事实上，作者是 Vue 核心团队的成员。  
+
+#### 弊端  
+Prerender很难覆盖到下面2个场景：  
+1. 永远穷尽不了预渲染所有页面，比如博客类网站、租房网站等类似B端发布的网站，在B端操作的过程中会产生新的页面。  
+2. 用户相关内容的首屏渲染问题无法解决  
+   
+
+
+### PWA  
+
 
 
 参考：  
 1[kanyun](https://www.kancloud.cn/hexiumin/vuea/2190212)
 2[web前端面试 - 面试官系列](https://vue3js.cn/interview/vue/spa.html#三、实现一个spa)
 3[一文读尽前端路由、后端路由、单页面应用、多页面应用](https://segmentfault.com/a/1190000021748190)
+4[Vue-cli SEO prerenders using prerender-spa-plugin plug-ins](https://programmer.group/vue-cli-seo-prerenders-using-prerender-spa-plugin-plug-ins.html)
 
