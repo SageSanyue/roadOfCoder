@@ -214,6 +214,63 @@ for (const f of [func1, func2, func3]) {
 
 ##### 手写Promise  
 实现一个简易版 Promise  
+```JavaScript
+const PENDING = 'pending'
+const RESOLVED = 'resolved'
+const REJECTED = 'rejected'
+
+function MyPromise(fn) {
+  const that = this
+  that.state = PENDING
+  // value 变量用于保存 resolve 或者 reject 中传入的值
+  that.value = null
+  // resolvedCallbacks 和 rejectedCallbacks 用于保存 then 中的回调，因为当执行完Promise 时状态可能还是等待中，这时候应该把 then 中的回调保存起来用于状态改变时使用
+  that.resolvedCallbacks = []
+  that.rejectedCallbacks = []
+  // 待完善 resolve 和 reject 函数
+  function resolve(value) {
+    if (that.state === PENDING) {
+      that.state = RESOLVED
+      that.value = value
+      that.resolvedCallbacks.map(cb => cb(that.value))
+    }
+  }
+
+  function reject(value) {
+    if (that.state === PENDING) {
+      that.state = REJECTED
+      that.value = value
+      that.rejectedCallbacks.map(cb => cb(that.value))
+    }
+  }
+  try {
+    fn(resolve, reject)
+  } catch (e) {
+    reject(e)
+  }
+}
+
+MyPromise.prototype.then = function(onFulfilled, onRejected) {
+  const that = this
+  onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : v => v
+  onRejected =
+    typeof onRejected === 'function'
+      ? onRejected
+      : r => {
+          throw r
+        }
+  if (that.state === PENDING) {
+    that.resolvedCallbacks.push(onFulfilled)
+    that.rejectedCallbacks.push(onRejected)
+  }
+  if (that.state === RESOLVED) {
+    onFulfilled(that.value)
+  }
+  if (that.state === REJECTED) {
+    onRejected(that.value)
+  }
+}
+```
 
 参考:  
 1[前端面试葵花宝典](https://docs.wuwei.fun/JS/promise.html)
