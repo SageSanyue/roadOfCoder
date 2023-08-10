@@ -336,6 +336,22 @@ https://github.com/cuth/postcss-pxtorem
 
 ## 常见功能  
 
+### CSS画图  
+
+#### CSS实现三角形  
+利用border实现三角形图案：  
+div盒子t3的宽高均为0，border设置为粗细某数值、颜色透明，需要哪个朝向的三角就设置哪个方向的border颜色。  
+
+``` CSS
+.t3{
+  width: 0;
+  height: 0;
+  border: 23px solid transparent;
+  border-left-color: #ff0400;
+}
+```
+[预览](http://js.jirengu.com/tujosaguno/1/edit?html,output)
+
 ### 窗口大小  
 窗口大小常见API  
 ```

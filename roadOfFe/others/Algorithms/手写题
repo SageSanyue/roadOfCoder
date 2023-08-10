@@ -14,4 +14,16 @@ function flattenDepth(arr) {
         return acc.concat(Array.isArray(cur) ? flattenDepth : cur)
     }, [])
 }
+
+function flattenDepth(arr) {
+    var arr2 = []
+    arr.forEach((val) => {
+        if(Array.isArray(val)) {
+          arr2 = arr2.concat(flatten(val))
+        } else {
+            arr2.push(val)
+        }
+    })
+    return arr2
+}
 ```

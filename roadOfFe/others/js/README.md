@@ -119,7 +119,7 @@ window.onload = function(){
 参考阅读：https://zhuanlan.zhihu.com/p/87950150
 
 ### 柯里化  
-题目:add(1)(2)(3)怎么实现?  
+题目1:add(1)(2)(3)怎么实现?  
 
 ```JavaScript
 function curryFn(fn, ...params) {
@@ -154,7 +154,32 @@ var add = function(...args) {
 
 
 参考：
-1[柯里化无限调用](https://www.cnblogs.com/echolun/p/16124496.html)
+1[柯里化无限调用](https://www.cnblogs.com/echolun/p/16124496.html)  
+
+题目2：  
+```
+sum(1, 2, 3).sumOf(); //6
+sum(2, 3)(2).sumOf(); //7
+sum(1)(2)(3)(4).sumOf(); //10
+sum(2)(4, 1)(2).sumOf(); //9  
+```  
+
+```JavaScript
+function sum(...params1) {
+    var callback = (...params2) => {
+        return sum(...[...params1, ...params2])
+    }
+    callback.sumOf = () => {
+        return params1.reduce((acc, cur) => acc + cur)
+    }
+    return callback
+}
+```
+
+参考：
+1[一道有意思的Js 题](https://pluckhuang.com/2020/02/14/一道有意思的js-题，sum1234-sumof/)
+
+
 
 ### this  
 
