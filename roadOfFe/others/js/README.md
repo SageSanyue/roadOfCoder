@@ -15,6 +15,8 @@
     - [手写bind](#手写bind)
     - [深拷贝](#深拷贝)
     - [深度比较](#深度比较)
+    - [event loop](#event-loop)
+      - [案例分析](#案例分析)
     - [Promise](#promise)
       - [Promise使用](#promise使用)
       - [手写Promise](#手写promise)
@@ -275,10 +277,10 @@ function isObject(obj) {
 
 // 全相等(深度)
 function isEqual(obj1, obj2) {
-    if(!isObject(obj1) || isObject(obj2)) {
-        return obj1 === obj2 // 值类型（注意参与比较的一般不会是函数）
+    if(!isObject(obj1) || !isObject(obj2)) {
+        return obj1 === obj2 // 值类型（注意参与比较的 一般不会是函数）
     }
-    if(obj1 === obj1){
+    if(obj1 === obj2){
         return true // 兼容(obj1, obj1)
     }
     // 两个都是对象或者数组，而且不相等  
@@ -296,7 +298,552 @@ function isEqual(obj1, obj2) {
     // 3.全相等
     return true
 }
+```  
+
+### event loop  
+
+#### 案例分析  
+
+一、Promise结合setTimeout  
+题1：  
+
+```JavaScript
+const promise = new Promise((resolve, reject) => {
+  console.log(1);
+  setTimeout(() => {
+    console.log("timerStart");
+    resolve("success");
+    console.log("timerEnd");
+  }, 0);
+  console.log(2);
+});
+promise.then((res) => {
+  console.log(res);
+});
+console.log(4);
+```  
+结果：  
 ```
+1
+2
+4
+timerStart
+timerEnd
+success
+```  
+解析：  
+- 从上至下，先遇到`new Promise`，执行该构造函数中的代码`console.log(1)`  
+- 然后碰到了定时器，将这个setTimeout中的函数放到下一个MacroTask的延迟队列中等待执行
+- 执行同步代码`console.log(2)`
+- 跳出promise函数，遇到`promise.then`，但其状态还是为`pending`，先不执行
+- 执行同步代码`console.log(4)`
+- 一轮循环过后，进入第二次MacroTask，发现延迟队列中有setTimeout定时器，执行它
+- 首先执行`console.log("timerStart")`，然后遇到了`resolve("success")`，将promise的状态改为`resolved`且保存结果并将之前的`promise.then`推入MicroTask队列
+- 继续执行同步代码`console.log("timerEnd")`
+- 宏任务全部执行完毕，查找MicroTask队列，发现`promise.then`这个微任务，执行它。  
+
+
+
+题2：  
+
+```JavaScript
+Promise.resolve().then(() => {
+    console.log('promise1');
+    const timer2 = setTimeout(() => {
+      console.log('timer2')
+    }, 0)
+  });
+  const timer1 = setTimeout(() => {
+    console.log('timer1')
+    Promise.resolve().then(() => {
+      console.log('promise2')
+    })
+  }, 0)
+  console.log('start');
+```  
+结果：  
+```
+start
+promise1
+timer1
+promise2
+timer2
+```  
+解析：  
+- 刚开始整个脚本作为第一次宏任务来执行，从上至下执行
+- 遇到`Promise.resolve().then`这个微任务，将then中的内容加入第一次的微任务队列标记为微1
+- 遇到定时器timer1，将它加入下一次宏任务的延迟列表，标记为宏1，等待执行(先不管里面是什么内容)
+- 执行同步代码`console.log('start')`
+- 整个脚本执行完毕，检查第一次的微任务队列(微1)，发现有一个`promise.then`这个微任务需要执行
+- 执行打印出微1中同步代码`console.log('timer1')`，然后发现定时器timer2，将它加入宏1的后面，标记为宏2
+- 第一次微任务队列(微1)执行完毕，执行后续宏任务(宏1)，首先执行同步代码`console.log('timer1')`
+- 然后遇到了promise2这个微任务，将它加入此次循环的微任务队列，标记为微2
+- 宏1中没有同步代码可执行了，查找本次循环的微任务队列(微2)，发现了`console.log('promise2')`，执行它
+- 第二轮执行完毕，执行宏2`console.log('timer2')`   
+
+题3：  
+```JavaScript  
+const promise1 = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    resolve('success')
+  }, 1000)
+})
+const promise2 = promise1.then(() => {
+  throw new Error('error!!!')
+})
+console.log('promise1', promise1)
+console.log('promise2', promise2)
+setTimeout(() => {
+  console.log('promise1', promise1)
+  console.log('promise2', promise2)
+}, 2000)
+```  
+结果：  
+```
+promise1 Promise {<pending>}
+promise2 Promise {<pending>}
+VM1455:7 Uncaught (in promise) Error: error!!!
+    at <anonymous>:7:9
+promise1 Promise {<fulfilled>: 'success'}
+promise2 Promise {<rejected>: Error: error!!!
+    at <anonymous>:7:9}
+// 注意node环境下与上浏览器环境中结果不同(只打印前三行)
+```  
+解析：  
+- 从上至下，先执行第一个`new Promise`中的函数，碰到setTimeout将它加入下一个宏任务列表
+- 跳出new Promise，碰到`promise1.then`这个微任务，但其状态还是为pending，这里先不执行
+- promise2是一个新的状态为pending的Promise
+- 执行同步代码console.log('promise1')，且打印出的promise1的状态为pending
+- 执行同步代码console.log('promise2')，且打印出的promise2的状态为pending
+- 碰到第二个定时器，将其放入下一个宏任务列表
+- 第一轮宏任务执行结束，并且没有微任务需要执行，因此执行第二轮宏任务
+- 先执行第一个定时器里的内容，将promise1的状态改为resolved且保存结果并将之前的`promise1.then`推入微任务队列
+- 该定时器中没有其它的同步代码可执行，因此执行本轮的微任务队列，也就是`promise1.then`，它抛出了一个错误，且将promise2的状态设置为了rejected
+- 第一个定时器执行完毕，开始执行第二个定时器中的内容: 打印出'promise1'，且此时promise1的状态为resolved; 打印出'promise2'，且此时promise2的状态为rejected  
+
+二、Promise规则  
+1. Promise的状态一经改变就不能再改变。
+2. `.then`和`.catch`都会返回一个新的Promise。
+3. catch不管被连接到哪里，都能捕获上层未捕捉过的错误。
+4. 在Promise中，返回任意一个非 promise 的值都会被包裹成 promise 对象，例如`return 3`会被包装为`return Promise.resolve(3)`。
+5. Promise 的 `.then` 或者 `.catch` 可以被调用多次, 但如果Promise内部的状态一经改变，并且有了一个值，那么后续每次调用`.then`或者`.catch`的时候都会直接拿到该值。
+6. `.then` 或者 `.catch` 中 return 一个 `error` 对象并不会抛出错误，所以不会被后续的 `.catch` 捕获。
+7. `.then` 或 `.catch` 返回的值不能是 promise 本身，否则会造成死循环。
+8. `.then` 或者 `.catch` 的参数期望是函数，传入非函数则会发生值透传。
+9. `.then`方法是能接收两个参数的，第一个是处理成功的函数，第二个是处理失败的函数，某些时候你可以认为catch是`.then`第二个参数的简便写法。
+10. `.finally`方法也是返回一个Promise，他在Promise结束的时候，无论结果为`resolved`还是`rejected`，都会执行里面的回调函数。  
+
+例题1:  
+
+```JavaScript
+const promise = new Promise((resolve, reject) => {
+  reject("error");
+  resolve("success2");
+});
+promise
+.then(res => {
+    console.log("then1: ", res);
+  }).then(res => {
+    console.log("then2: ", res);
+  }).catch(err => {
+    console.log("catch: ", err);
+  }).then(res => {
+    console.log("then3: ", res);
+  })
+```  
+结果：  
+```
+catch:  error // 3. catch不管被连接到哪里，都能捕获上层未捕捉过的错误。
+then3:  undefined  // 2. `.then`和`.catch`都会返回一个新的Promise。且由于这个Promise没有返回值，所以打印出来的是undefined。
+```  
+
+例题2：  
+```JavaScript
+Promise.resolve(1)
+  .then(res => {
+    console.log(res);
+    return 2;
+  })
+  .catch(err => {
+    return 3;
+  })
+  .then(res => {
+    console.log(res);
+  })
+```  
+结果：  
+```
+1
+2  // resolve(1)之后走的是第一个then方法，并没有走catch，所以第二个then中的res得到的实际上是第一个then的返回值2，且return 2会被包装成resolve(2)。
+```  
+解析：  
+Promise可以链式调用，不过promise 每次调用 `.then` 或者 `.catch` 都会返回一个新的 promise，从而实现了链式调用, 它并不像一般我们任务的链式调用一样`return this`。  
+
+例题3：  
+```JavaScript
+Promise.reject(1)
+  .then(res => {
+    console.log(res);
+    return 2;
+  })
+  .catch(err => {
+    console.log(err);
+    return 3
+  })
+  .then(res => {
+    console.log(res);
+  })
+```  
+答案：  
+```
+1
+3 // 第二个then中的res得到的就是catch中的返回值。
+```  
+
+例题4：  
+```JavaScript
+const promise = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    console.log('timer')
+    resolve('success')
+  }, 1000)
+})
+const start = Date.now();
+promise.then(res => {
+  console.log(res, Date.now() - start)
+})
+promise.then(res => {
+  console.log(res, Date.now() - start)
+})
+```  
+结果：  
+```
+timer
+success 1006
+success 1007 // 足够快的话可能两个都是1007
+// 5. Promise 的 `.then` 或者 `.catch` 可以被调用多次, 但如果Promise内部的状态一经改变，并且有了一个值，那么后续每次调用`.then`或者`.catch`的时候都会直接拿到该值。
+```  
+
+例题5：  
+```JavaScript
+Promise.resolve().then(() => {
+  return new Error('error!!!')
+}).then(res => {
+  console.log("then: ", res)
+}).catch(err => {
+  console.log("catch: ", err)
+})
+```  
+结果：  
+```
+then:  Error: error!!!
+    at <anonymous>:2:10
+```  
+解析：  
+> 4. 在Promise中，返回任意一个非 promise 的值都会被包裹成 promise 对象，例如`return 3`会被包装为`return Promise.resolve(3)`。
+> 6. `.then` 或者 `.catch` 中 return 一个 `error` 对象并不会抛出错误，所以不会被后续的 `.catch` 捕获。
+`return new Error('error!!!')`被包装成了`return Promise.resolve(new Error('error!!!'))`  
+
+如果要抛出错误，应该使用下面任意一种方式：  
+```JavaScript
+return Promise.reject(new Error('error!!!'))
+// or
+throw new Error('error!!!')
+```  
+
+例题6:  
+```JavaScript
+const promise = Promise.resolve().then(() => {
+  return promise;
+})
+promise.catch(console.err)
+```  
+结果：  
+```
+Uncaught SyntaxError: Identifier 'promise' has already been declared
+// 7. `.then` 或 `.catch` 返回的值不能是 promise 本身，否则会造成死循环。
+```  
+
+例题7：  
+```JavaScript
+Promise.resolve(1)
+  .then(2)
+  .then(Promise.resolve(3))
+  .then(console.log)
+```  
+结果：  
+```
+1
+```  
+解析：`8. .then 或者 .catch 的参数期望是函数，传入非函数则会发生值透传。` 第一个then和第二个then中传入的都不是函数(一个是数字类型，一个是对象类型)因此发生了透传，将`resolve(1)`的值直接传到最后一个then里。  
+
+例题8：  
+```JavaScript
+Promise.reject('err!!!')
+  .then((res) => {
+    console.log('success', res)
+  }, (err) => {
+    console.log('error', err)
+  }).catch(err => {
+    console.log('catch', err)
+  })
+```  
+结果：  
+```
+error err!!!
+```  
+解析：`9. .then方法是能接收两个参数的，第一个是处理成功的函数，第二个是处理失败的函数，某些时候你可以认为catch是.then第二个参数的简便写法。`  
+进入的是then()中的第二个参数里面，而如果把第二个参数去掉，就进入了catch()中：  
+
+```JavaScript  
+Promise.reject('error!!!')
+  .then((res) => {
+    console.log('success', res)
+  }).catch(err => {
+    console.log('catch', err)
+  })
+```  
+结果：  
+```
+catch error!!!
+```  
+进阶：  
+```JavaScript 
+Promise.resolve()
+  .then(function success (res) {
+    throw new Error('error!!!')
+  }, function fail1 (err) {
+    console.log('fail1', err)
+  }).catch(function fail2 (err) {
+    console.log('fail2', err)
+  })
+```  
+结果：  
+```
+fail2 Error: error!!!
+    at success (<anonymous>:3:11)
+// .then()执行的应该是success()函数，可是success()函数抛出的是一个错误，它会被后面的catch()给捕获到，而不是被fail1函数捕获
+```  
+
+三、.finally规则  
+1. .finally()方法不管Promise对象最后的状态如何都会执行  
+2. .finally()方法的回调函数不接受任何的参数，也就是说你在.finally()函数中是没法知道Promise最终的状态是resolved还是rejected的  
+3. 它最终返回的默认会是一个上一次的Promise对象值，不过若抛出的是一个异常则返回异常的Promise对象。  
+
+题1：  
+```JavaScript
+Promise.resolve('1')
+  .then(res => {
+    console.log(res)
+  })
+  .finally(() => {
+    console.log('finally')
+  })
+Promise.resolve('2')
+  .finally(() => {
+    console.log('finally2')
+  	return '我是finally2返回的值'
+  })
+  .then(res => {
+    console.log('finally2后面的then函数', res)
+  })
+```  
+结果：  
+```
+1
+finally2
+finally  // 链式调用后面的内容需要等前一个调用执行完才会执行。
+finally2后面的then函数 2  // 就算finally2返回了新的值，它后面的then()函数接收到的结果却还是'2'
+```  
+
+题2：  
+```JavaScript
+Promise.resolve('1')
+  .finally(() => {
+    console.log('finally1')
+    throw new Error('我是finally中抛出的异常')
+  })
+  .then(res => {
+    console.log('finally后面的then函数', res)
+  })
+  .catch(err => {
+    console.log('捕获错误', err)
+  })
+```  
+结果：  
+```
+finally1
+捕获错误 Error: 我是finally中抛出的异常
+    at <anonymous>:4:11
+    at <anonymous>
+```  
+
+四、async/awit  
+1. 在async函数中抛出了错误，则终止错误结果，不会继续向下执行
+
+
+例题1：  
+```JavaScript
+async function async1 () {
+  console.log('async1 start');
+  await new Promise(resolve => {
+    console.log('promise1')
+  })
+  console.log('async1 success');
+  return 'async1 end'
+}
+console.log('srcipt start')
+async1().then(res => console.log(res))
+console.log('srcipt end')
+```  
+结果：  
+```
+srcipt start
+async1 start
+promise1
+srcipt end 
+// 在async1中await后面的Promise是没有返回值的，
+// 也就是它的状态始终是pending状态，因此相当于一直在await，await，await却始终没有响应
+// 所以在await之后的内容是不会执行的，也包括async1后面的 .then
+```  
+
+例题2：  
+```JavaScript
+async function testSometing() {
+  console.log("执行testSometing");
+  return "testSometing";
+}
+
+async function testAsync() {
+  console.log("执行testAsync");
+  return Promise.resolve("hello async");
+}
+
+async function test() {
+  console.log("test start...");
+  const v1 = await testSometing();
+  console.log(v1);
+  const v2 = await testAsync();
+  console.log(v2);
+  console.log(v1, v2);
+}
+
+test();
+
+var promise = new Promise(resolve => {
+  console.log("promise start...");
+  resolve("promise");
+});
+promise.then(val => console.log(val));
+
+console.log("test end...");
+```  
+结果：  
+```
+test start...
+执行testSometing
+promise start...
+test end...
+testSometing
+执行testAsync
+promise
+hello async
+testSometing hello async
+```  
+
+例题3：  
+```JavaScript
+async function async1 () {
+  await async2();
+  console.log('async1');
+  return 'async1 success'
+}
+async function async2 () {
+  return new Promise((resolve, reject) => {
+    console.log('async2')
+    reject('error')
+  })
+}
+async1().then(res => console.log(res))
+```  
+结果：  
+```
+async2
+Uncaught (in promise) error
+```  
+解析：await后面跟着的async2是一个状态为rejected的promise，根据规则`1. 在async函数中抛出了错误，则终止错误结果，不会继续向下执行`，打印Uncaught (in promise) error后即结束。  
+
+例题4： 
+若要使得错误的地方不影响async函数后续的执行的话，可以使用`try catch`。  
+
+``` JavaScript
+async function async1 () {
+  try {
+    await Promise.reject('error!!!')
+  } catch(e) {
+    console.log(e)
+  }
+  console.log('async1');
+  return Promise.resolve('async1 success')
+}
+async1().then(res => console.log(res))
+console.log('script start')
+```  
+结果：  
+```
+script start
+error!!!
+async1
+async1 success
+```  
+或者可以直接在`Promise.reject`后面跟着一个`catch()`方法，也能使得错误的地方不影响async函数后续的执行：  
+```JavaScript
+async function async1 () {
+  await Promise.reject('error!!!')
+    .catch(e => console.log(e))
+  console.log('async1');
+  return Promise.resolve('async1 success')
+}
+async1().then(res => console.log(res))
+console.log('script start')
+```  
+
+例题5：  
+> 2. .finally()方法的回调函数不接受任何的参数，也就是说你在.finally()函数中是没法知道Promise最终的状态是resolved还是rejected的  
+> 3. .finally()最终返回的默认会是一个上一次的Promise对象值，不过若抛出的是一个异常则返回异常的Promise对象。
+```JavaScript
+var p1 = new Promise((resolve) => {
+  setTimeout(() => {
+    resolve('resolve3');
+    console.log('timer1')
+  }, 0)
+  resolve('resovle1');
+  resolve('resolve2');
+}).then(res => {
+  console.log(res)
+  setTimeout(() => {
+    console.log(p1)
+  }, 1000)
+}).finally(res => {
+  console.log('finally', res)
+})
+```  
+结果：  
+```
+resovle1
+finally undefined
+timer1
+Promise {<fulfilled>: undefined}
+```  
+分析：  
+finally不管Promise的状态是resolved还是rejected都会执行，且它的回调函数是接收不到Promise的结果的，所以finally()中的res是undefined。  
+最后一个定时器打印出的p1其实是.finally的返回值，.finally的返回值如果在没有抛出错误的情况下默认会是上一个Promise(.then())的返回值，
+但是这个.then()并没有返回值，所以p1打印出来的Promise的值会是undefined。  
+
+
+
+
+参考：[要就来45道Promise面试题](https://juejin.cn/post/6844904077537574919)
   
 ### Promise  
 #### Promise使用  

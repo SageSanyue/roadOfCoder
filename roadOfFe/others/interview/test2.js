@@ -79,6 +79,28 @@ function debounce(fn, wait) {
     }
 }
 // 进阶问题：如何让debounce的第一次触发也执行？
+// 不想等到停止触发事件后才执行对应代码，而是希望立马执行代码；等到停止触发n秒后，然后再重新触发执行。
+function debounce(func, wait, offhand) {
+    let timer;
+
+    return function () {
+        if (timer) clearTimeout(timer);
+        if (offhand) {
+            let callNow = !timer;
+            
+            timer = setTimeout(()=>{
+                timer = null;
+            }, wait)
+            if (callNow) func.apply(this, arguments)
+        }
+        else {
+            timer = setTimeout(()=>{
+                func.apply(this, arguments)
+            }, wait);
+        }
+    }
+}
+// 通过控制offhand的值，就可以控制是否要立刻执行触发后的代码。
 
 // TODO
 // 实现instanceof-来判断对象的具体类型

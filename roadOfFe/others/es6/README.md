@@ -327,29 +327,6 @@ MyPromise.prototype.then = function(onFulfilled, onRejected) {
 // 题目样例-zoom
 function requestLimit(urlList, limitCount) {
     // TODO
-    // let arr = urlList.slice(0, limitCount)
-    let promiseArr
-    let result = []
-    for(let i = 0; i < urlList.length; i++) {
-        let promise = new Promise((resolved, rejected) => {
-            try {
-                fetch(urlList[i])
-                resolved
-            } catch {
-                rejected
-            }
-        })
-        promiseArr.push(promise)
-    }
-    let newArr
-    for(let i = 0; i < promiseArr.length; i++) {
-        newArr.push(promiseArr[i])
-        if(i % limitCount === 0){
-            result.push(Promise.allSettled(newArr))
-        }
-    }
-    // promiseArr.splice(0, 3)
-    
     return result
 }
     
@@ -371,6 +348,7 @@ async function main() {
 }
 main();
 ```
+答案：  
 
 ```JavaScript
 async function sendRequest(urls, limit , callback) {
@@ -410,7 +388,7 @@ function fetchFunc(url) {
       })
       .then(data => console.log(data))
       .catch(err => {
-        rejected(err)
+        reject(err)
       })
   })
 }
